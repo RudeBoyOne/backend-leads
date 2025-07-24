@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: backend-leads
+  datasource:
+    url: jdbc:postgresql://localhost:5432/meubanco
+    username: usuario
+    password: senha
+#    driver-class-name: org.postgresql.Driver
+  jpa:
+    show-sql: false
