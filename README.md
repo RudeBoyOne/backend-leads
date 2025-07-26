@@ -24,12 +24,7 @@ banco:
    docker-compose up -d
    ```
 
-   Isso criará e inicializará um container do PostgreSQL acessível pela porta **5432**, com as seguintes credenciais
-   padrão:
-
-   - **Usuário:** `usuario`
-   - **Senha:** `senha`
-   - **Banco de dados:** `meubanco`
+   Isso criará e inicializará um container do PostgreSQL acessível pela porta **5432**
 
 > **Nota:** O volume `pgdata` é utilizado para persistir os dados do banco mesmo que o container seja parado.
 
