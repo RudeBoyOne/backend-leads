@@ -1,7 +1,7 @@
 # Integração de Leads via WebHook
 
 ## Configuração do Webhook
-Para receber leads do GrupoZAP, seu sistema deve estar preparado para receber requisições HTTP POST com os seguintes parâmetros:
+Para receber leads , o sistema deve estar
 
 ### Headers obrigatórios
 ```
@@ -11,7 +11,7 @@ Authorization: Basic [credenciais-em-base64]
 
 > Timeout As requisições têm timeout de 30 segundosRequisições que excederem este tempo serão consideradas falhas e sujeitas a retentativas
 
-## Configuração de Endpoints.
+## Padrao de Endpoints.
 
 Padrões de URL validos
  - Com ID do anunciante na path:
@@ -25,71 +25,186 @@ Padrões de URL validos
 - Sem ID do anunciante (opcional):
     - https://seudominio.com.br/grupozap/lead
 
+ID-DO-ANUNCIANTE, é a representaçao de quem ira receber a requisição, é um forma de identificaçao do clinte no Software/Crm, caso nao tenha o ID-DO-ANUNCIANTE o endpoint podera ser implementado sem ele,Exemplo:
+
+    https://yourdomain.com.br/grupozap/lead
+    
+
 ## Segurança 
-Autenticação Basic Auth, Todas as requisições incluem um header de autenticação no formato:
+
+O tipo de Autenticação é a [Basic Auth](https://en.wikipedia.org/wiki/Basic_access_authentication), Todas as requisições devem incluir um header com o campo Authorization, e a `secret key` como valor, exemplo:
+
     Authorization: Basic dml2YXJlYWw6NTk0RjgwM0IzODBBNDEzOTZFRDYzRENBMzk1MDM1NDI=
 
-**EU SO PEGUEI O CODIGO NODEJS DE EXEMPLO DA DOC E PEDI PRO GEPETO FAZER UM EXEMPLO EM JAVA , !NAO USE SEM VERIFICARA ANTES!**
-```
-    @RestController
-@RequestMapping("/grupozap/lead")
-public class LeadController {
+>  Caso a chave não for a chave enviada pelo grupo zap, deverá retornar response statusCode 401, provavelmente a requisição não foi realizada pelo GrupoZap
 
-    private static final String SECRET_KEY = "594F803B380A41396ED63DCA39503542";
 
-    @PostMapping
-    public ResponseEntity<?> receiveLead(@RequestHeader("Authorization") String authorizationHeader) {
-        // 1. Verify Authorization header exists
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Basic ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+## Validaçao Da Secret_KEY
 
-        try {
-            // 2. Extract and decode Base64 value
-            String base64Credentials = authorizationHeader.substring("Basic ".length());
-            byte[] decodedBytes = Base64.getDecoder().decode(base64Credentials);
-            String credentials = new String(decodedBytes);
-            
-            // 3. Validate SECRET_KEY
-            String[] values = credentials.split(":", 2);
-            if (values.length != 2 || !SECRET_KEY.equals(values[1])) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-            
-            // If validation passes, continue processing
-            return ResponseEntity.ok().build();
-            
-        } catch (IllegalArgumentException e) {
-            // Handle Base64 decoding errors
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid authorization format");
-        }
+> Lembrando que a SECRET_KEY é por CRM não é por cliente, ou seja, não deve ser utilizada para identificação do cliente (anunciante) e sim para validar se a requisição está sendo realizado pelo GrupoZap.
+a documentaçao disponibiliza um exemplo em NodeJs:
+
+- Obter o header Authorization;
+````javascript
+    const authorization = req.headers.Authorization;
+    // pegando o Authorization do header da requiçao 
+    // a const authorization recebe o valor bruto da secretkey:
+    // valor da secretkey : `Basic dml2YXJlYWw6NTk0RjgwM0IzODBBNDEzOTZFRDYzRENBMzk1MDM1NDI=`
+````
+
+- Ignore Basic e decodifique somente o valor;
+````javascript
+    const base64 = authorization.split(' ')[1];
+    // tirando o inicio da Secretkey onte ta escrito "Basic "
+    // valor da secretkey : `dml2YXJlYWw6NTk0RjgwM0IzODBBNDEzOTZFRDYzRENBMzk1MDM1NDI=`
+
+    const value = new Buffer(base64, 'base64').toString('utf-8');
+    // Essa linha de código está decodificando uma string que está em base64 para texto em UTF-8
+    // valor da secretkey : vivareal:594F803B380A41396ED63DCA39503542
+````
+
+- Valide a SECRET_KEY;
+    ````javascript
+    // 'vivareal:594F803B380A41396ED63DCA39503542'
+    const secretKey = value.split(':')[1];
+    //  tirando o identificador do CRM da secret key
+    // valor da secretkey : 594F803B380A41396ED63DCA39503542
+
+    if (secretKey !== SECRET_KEY) {
+        return res.sendStatus(401);
     }
-}
-```
-> ### Caso a chave não for a que enviamos, deverá retornar response statusCode 401, provavelmente a requisição não foi realizada pelo GrupoZap
+    ````
 
-# Envio de Leads
+# Como funciona o envio de leads
+Envio: Os leads são enviados via HTTP POST, em formato JSON, para o endpoint homologado.
 
-o controle de sucesso de envio das leads é feito pelos protocolos http:
-2xx: sucesso e açoes extras nao sao necessarias 
-3xx, 4xx e 5xx indicam que houve falha no processamento da lead por parte do software/crm
+
+  **Processo: Cada lead é enviado individualmente, sempre que houver um novo contato**.
+- Confirmação de recebimento:
+    - Status 2xx: Lead recebido com sucesso, nenhuma ação extra é necessária.
+    - Status 3xx, 4xx ou 5xx: Falha no processamento do lead.
+
+
+ - Retentativas:
+    - Se não receber status 2xx, o sistema tenta reenviar o lead até 3 vezes.
+    - Se ainda assim não for entregue, o lead fica armazenado por até 14 dias e pode ser reenviado a pedido.
+
+
+- Importante:
+    - O controle de recebimento é feito apenas pelo código de status HTTP.
+    - Qualquer informação no corpo da resposta será ignorada.
+
+
+- [Respostas Informativas](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Status#respostas_informativas) (100 – 199)
+
+- [Respostas bem-sucedidas](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Status#respostas_bem-sucedidas) (200 – 299)
+
+- [Mensagens de redirecionamento](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Status#mensagens_de_redirecionamento) (300 – 399)
+
+- [Respostas de erro do cliente](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Status#respostas_de_erro_do_cliente) (400 – 499)
+
+- [Respostas de erro do servidor](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Status#respostas_de_erro_do_servidor) (500 – 599)
+
 
 ### Contrato Json
-```
-{
-  "leadOrigin": "Grupo OLX",
-  "timestamp": "2017-10-23T15:50:30.619Z",
-  "originLeadId": "59ee0fc6e4b043e1b2a6d863",
-  "originListingId": "87027856",
-  "clientListingId": "a40171",
-  "name": "Nome Consumidor",
-  "email": "nome.consumidor@email.com",
-  "ddd": "11",
-  "phone": "999999999",
-  "phoneNumber": "11999999999",
-  "message": "Olá, tenho interesse neste imóvel. Aguardo o contato. Obrigado.",
-  "temperature": "Alta",
-  "transactionType": "SELL"
-}
+````JSON
+    {
+    "leadOrigin": "Grupo OLX",
+    "timestamp": "2017-10-23T15:50:30.619Z",
+    "originLeadId": "59ee0fc6e4b043e1b2a6d863",
+    "originListingId": "87027856",
+    "clientListingId": "a40171",
+    "name": "Givaldo sem teto da silva",
+    "email": "queroumacasapeloamorddeus@email.com",
+    "ddd": "11",
+    "phone": "999999999",
+    "phoneNumber": "11999999999",
+    "message": "oi quer casa",
+    "temperature": "Alta",
+    "transactionType": "SELL"
+    }
+````
+### Dicioniario do contrato
 
-```
+- leadOrigin1: Identificador da origem do lead (Grupo OLX);
+- timestamp: Data e horário da criação do lead no formato ISO_LOCAL_DATE_TIME;
+- originLeadId: Identificador do lead do GrupoZap;
+- originListingId: Identificador do anúncio do GrupoZap;
+- clientListingId: Identificador do anúncio para o anunciante (ListingId);
+- name: Nome do consumidor que gerou o lead;
+- email: E-Mail do consumidor que gerou o lead;
+- ddd: DDD do telefone do consumidor que gerou o lead Ex:11;
+- phone: Telefone do consumidor que gerou o lead Ex:999999999;
+- phoneNumber: [deprecado] Telefone do consumidor que gerou o lead (DDD + Phone) Ex:11999999999;
+- message2: Mensagem do consumidor que gerou o lead;
+- temperature: Temperatura do lead (Baixa, Média, Alta);
+- transactionType: Tipo de transação (RENT, SELL);
+  
+# Integração por E-mail
+
+---
+
+## Visão Geral
+
+A integraçao por email permite a extraçao automatica de dados das leads novas, Permite coletar dados Estruturados diretamente do email.
+
+---
+
+## Como Funciona
+
+A automação é baseada no uso de **atributos HTML `title`** em campos específicos do e-mail. Cada informação relevante (como nome, e-mail, etc.) é mapeada com um `title` único.
+
+### Padrão de Nomenclatura dos Campos
+
+`[entidade]-[campo]`
+
+* **`[entidade]`**: Categoria da informação (ex: `lead` ou `listing`).
+* **`[campo]`**: Informação específica (ex: `name`, `email`, `address`).
+
+---
+
+## Campos Disponíveis para Mapeamento
+
+| Descrição do Campo        | Atributo (`title`)     |
+| ------------------------- | ---------------------- |
+| **Informações do lead**   |                        |
+| Nome do Lead              | `lead-name`            |
+| E-mail do Lead            | `lead-email`           |
+| Telefone do Lead          | `lead-phoneNumber`     |
+| Qualificação do Lead      | `lead-score`           |
+| **Informações do imóvel** |
+| Imagem do imóvel          | `listing-image`        |
+| Código do imóvel          | `listing-externalCode` |
+| Bairro do imóvel          | `listing-neighborhood` |
+| Endereço do imóvel        | `listing-address`      |
+| Preço do imóvel           | `listing-price`        |
+
+**Atenção:** As informações de histórico do lead, como tempo de busca (`history-timeLine`) e bairros pesquisados (`history-neighborhoods`),estão indisponíveis.
+
+---
+
+##  Exemplo de Extração de Dados
+
+Sua ferramenta de integração pode usar seletores para localizar os atributos `title` e extrair o conteúdo correspondente.
+
+**Exemplo em JavaScript:**
+
+```javascript
+// Seleciona o elemento com o atributo title="lead-email"
+const emailElement = document.querySelector('[title="lead-email"]');
+
+// Extrai o texto do elemento, removendo espaços em branco
+const leadEmail = emailElement ? emailElement.textContent.trim() : null;
+
+console.log("E-mail do Lead:", leadEmail);
+
+
+## Ajuda adicional
+
+[repo do github](
+    https://github.com/olxbr/crm-lead-integration/blob/master/samples/java/README.md
+    )
+
+[Validador de endpoint](
+    https://developers.grupozap.com/webhooks/endpoint_validator
+)

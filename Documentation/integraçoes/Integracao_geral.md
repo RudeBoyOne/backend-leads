@@ -17,14 +17,14 @@ Após aprovação, serão fornecidas:
 `POST https://crm-leadmanager-leadreceiver-api.gestao.prod.olxbr.io/v1/addLeads`
 
 ### Headers obrigatórios:
-```
-X-API-KEY: [chave-api]
-X-Agent-Name: [agent-name]
-accept: application/json
-Content-Type: application/json
-````
+
+    X-API-KEY: [chave-api]
+    X-Agent-Name: [agent-name]
+    accept: application/json
+    Content-Type: application/json
+
 ## Corpo da requisição (JSON)
-``````
+``````JSON
 {
   "LeadName": "string",
   "LeadEmail": "string",
@@ -38,8 +38,20 @@ Content-Type: application/json
 ``````
 
 ## Resposta
-Status 200 OK com detalhes do lead em JSON.
+as respostas sao controladas pelos protocolos HTTP padrao 
+
+- [Respostas Informativas](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Status#respostas_informativas) (100 – 199)
+
+- [Respostas bem-sucedidas](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Status#respostas_bem-sucedidas) (200 – 299)
+
+- [Mensagens de redirecionamento](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Status#mensagens_de_redirecionamento) (300 – 399)
+
+- [Respostas de erro do cliente](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Status#respostas_de_erro_do_cliente) (400 – 499)
+
+- [Respostas de erro do servidor](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Reference/Status#respostas_de_erro_do_servidor) (500 – 599)
+
 
 ## Documentação adicional
 
 [Swagger para testes](https://crm-leadmanager-leadreceiver-api.gestao.prod.olxbr.io/swagger-ui/index.html#/add-lead-controller/postLead)
+
