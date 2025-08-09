@@ -10,3 +10,6 @@ public class BackendLeadsApplication {
     SpringApplication.run(BackendLeadsApplication.class, args);
   }
 }
+
+// $env:HMAC_SECRET="RoffeImoveis"
+// X-SIGNATURE

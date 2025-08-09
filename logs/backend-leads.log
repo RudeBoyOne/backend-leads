@@ -1,0 +1,16 @@
+2025-08-09 08:44:04 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 18872 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-09 08:44:04 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-09 08:45:02 INFO  c.b.s.b.BackendLeadsApplication - Started BackendLeadsApplication in 63.244 seconds (process running for 72.094)
+2025-08-09 08:46:46 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-09T11:46:46.376055600Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-09 08:46:50 INFO  c.b.s.b.controller.LeadController - Webhook received | Timestamp: 2025-08-09T11:46:50.675228600Z | IP: 0:0:0:0:0:0:0:1 | Origin: Vivaeal | User-Agent: PostmanRuntime/7.39.1
+2025-08-09 08:47:46 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-09T11:47:45.590162500Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-09 08:47:47 INFO  c.b.s.b.controller.LeadController - Webhook received | Timestamp: 2025-08-09T11:47:47.176617200Z | IP: 0:0:0:0:0:0:0:1 | Origin: Vivaeal | User-Agent: PostmanRuntime/7.39.1
+2025-08-09 08:49:24 WARN  c.b.s.b.security.hmac.hmacAuthFilter - Webhook rejected | Timestamp: 2025-08-09T11:49:24.461093800Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 401 | Reason: Invalid signature
+2025-08-09 08:52:00 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 18872 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-09 08:52:00 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-09 08:52:17 INFO  c.b.s.b.BackendLeadsApplication - Started BackendLeadsApplication in 19.33 seconds (process running for 507.063)
+2025-08-09 08:52:20 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 18872 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-09 08:52:20 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-09 08:52:30 INFO  c.b.s.b.BackendLeadsApplication - Started BackendLeadsApplication in 11.508 seconds (process running for 520.584)
+2025-08-09 08:53:39 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 18872 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-09 08:53:39 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
