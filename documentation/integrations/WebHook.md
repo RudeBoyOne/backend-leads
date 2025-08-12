@@ -9,7 +9,7 @@ User-Agent: grupozap-notification-api
 Authorization: Basic [credenciais-em-base64]
 ````
 
-> Timeout As requisições têm timeout de 30 segundosRequisições que excederem este tempo serão consideradas falhas e sujeitas a retentativas
+> Timeout As requisições têm timeout de 30 segundos . Requisições que excederem este tempo serão consideradas falhas e sujeitas a retentativas
 
 ## Padrao de Endpoints.
 
@@ -23,11 +23,9 @@ Padrões de URL validos
     - https://imobiliariaxpto.crm.com.br/grupozap/lead
 
 - Sem ID do anunciante (opcional):
+  > ID-DO-ANUNCIANTE, é a representaçao de quem ira receber a requisição, é um forma de identificaçao do clinte no Software/Crm, caso nao tenha o ID-DO-ANUNCIANTE o endpoint podera ser implementado sem ele,Exemplo:
     - https://seudominio.com.br/grupozap/lead
 
-ID-DO-ANUNCIANTE, é a representaçao de quem ira receber a requisição, é um forma de identificaçao do clinte no Software/Crm, caso nao tenha o ID-DO-ANUNCIANTE o endpoint podera ser implementado sem ele,Exemplo:
-
-    https://yourdomain.com.br/grupozap/lead
     
 
 ## Segurança 
@@ -46,6 +44,7 @@ a documentaçao disponibiliza um exemplo em NodeJs:
 
 - Obter o header Authorization;
 ````javascript
+
     const authorization = req.headers.Authorization;
     // pegando o Authorization do header da requiçao 
     // a const authorization recebe o valor bruto da secretkey:
@@ -197,7 +196,7 @@ const emailElement = document.querySelector('[title="lead-email"]');
 const leadEmail = emailElement ? emailElement.textContent.trim() : null;
 
 console.log("E-mail do Lead:", leadEmail);
-
+```
 
 ## Ajuda adicional
 
