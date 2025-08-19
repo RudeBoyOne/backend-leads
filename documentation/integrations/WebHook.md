@@ -75,13 +75,16 @@ a documentaçao disponibiliza um exemplo em NodeJs:
     ````
 
 # Como funciona o envio de leads
-Envio: Os leads são enviados via HTTP POST, em formato JSON, para o endpoint homologado.
+Envio : Os leads são enviados pela grupo OLX via HTTP POST, em formato JSON, para nosso endpoint homologado.
+
+.Após processar as lead conforme os nossos requisitos, retornamos um status code à OLX, que interpreta essa resposta para fornecer o feedback adequado ao cliente.
 
 
   **Processo: Cada lead é enviado individualmente, sempre que houver um novo contato**.
 - Confirmação de recebimento:
-    - Status 2xx: Lead recebido com sucesso, nenhuma ação extra é necessária.
+    - Status 2xx : ( OLX entende que)  A Lead foi recebido com sucesso, nenhuma ação extra é necessária.
     - Status 3xx, 4xx ou 5xx: Falha no processamento do lead.
+  
 
 
  - Retentativas:
