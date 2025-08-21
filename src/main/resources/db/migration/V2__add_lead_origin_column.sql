@@ -1,1 +1,0 @@
-ALTER TABLE leads ADD COLUMN lead_origin VARCHAR(255);

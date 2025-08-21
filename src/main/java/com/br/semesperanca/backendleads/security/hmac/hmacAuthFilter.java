@@ -9,16 +9,15 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
-import org.jboss.logging.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
+@Slf4j
 @Component
 public class hmacAuthFilter extends OncePerRequestFilter {
-
-  private static final Logger log = Logger.getLogger(hmacAuthFilter.class);
 
   @Override
   protected void doFilterInternal(
@@ -35,7 +34,7 @@ public class hmacAuthFilter extends OncePerRequestFilter {
     String receivedSignature = wrappedRequest.getHeader("X-SIGNATURE");
 
     if (receivedSignature == null) {
-      log.warnf(
+      log.warn(
           "Webhook rejected | Timestamp: %s | IP: %s | User-Agent: %s | Status: 401 | Reason: Missing signature",
           timestamp, ip, userAgent);
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing signature");
@@ -59,20 +58,20 @@ public class hmacAuthFilter extends OncePerRequestFilter {
       System.out.println("SIGNATURE ESPERADA: [" + expectedSignature + "]");
 
       if (!MessageDigest.isEqual(expectedSignature.getBytes(), receivedSignature.getBytes())) {
-        log.warnf(
+        log.warn(
             "Webhook rejected | Timestamp: %s | IP: %s | User-Agent: %s | Status: 401 | Reason: Invalid signature",
             timestamp, ip, userAgent);
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid signature");
         return;
       }
 
-      log.infof(
+      log.info(
           "Webhook received | Timestamp: %s | IP: %s | User-Agent: %s | Status: 200",
           timestamp, ip, userAgent);
       filterChain.doFilter(wrappedRequest, response);
 
     } catch (Exception e) {
-      log.errorf(
+      log.error(
           "Webhook error | Timestamp: %s | IP: %s | User-Agent: %s | Status: 500 | Reason: %s",
           timestamp, ip, e.getMessage());
       response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Signature error");
