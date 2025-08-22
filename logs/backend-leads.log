@@ -187,3 +187,67 @@
 2025-08-21 14:07:11 ERROR c.b.s.b.security.hmac.hmacAuthFilter - Webhook error | Timestamp: %s | IP: %s | User-Agent: %s | Status: 500 | Reason: %s
 2025-08-21 14:09:32 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: %s | IP: %s | User-Agent: %s | Status: 200
 2025-08-21 14:09:38 ERROR c.b.s.b.security.hmac.hmacAuthFilter - Webhook error | Timestamp: %s | IP: %s | User-Agent: %s | Status: 500 | Reason: %s
+2025-08-21 20:17:33 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 16320 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 20:17:33 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 20:20:42 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 13856 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 20:20:42 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 20:21:37 INFO  c.b.s.b.BackendLeadsApplication - Started BackendLeadsApplication in 60.602 seconds (process running for 67.336)
+2025-08-21 20:22:10 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: %s | IP: %s | User-Agent: %s | Status: 200
+2025-08-21 20:22:13 ERROR c.b.s.b.security.hmac.hmacAuthFilter - Webhook error | Timestamp: %s | IP: %s | User-Agent: %s | Status: 500 | Reason: %s
+2025-08-21 20:25:18 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 13856 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 20:25:18 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 20:28:21 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 13856 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 20:28:21 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 20:28:36 INFO  c.b.s.b.BackendLeadsApplication - Started BackendLeadsApplication in 16.337 seconds (process running for 485.882)
+2025-08-21 20:30:28 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 13856 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 20:30:28 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 20:35:30 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 12796 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 20:35:30 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 20:36:38 INFO  c.b.s.b.BackendLeadsApplication - Started BackendLeadsApplication in 74.993 seconds (process running for 83.841)
+2025-08-21 20:37:00 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: %s | IP: %s | User-Agent: %s | Status: 200
+2025-08-21 20:37:06 INFO  c.b.s.b.controller.LeadController - Webhook received | Endpoint: %s | LeadId: %s
+2025-08-21 20:38:17 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: %s | IP: %s | User-Agent: %s | Status: 200
+2025-08-21 20:38:22 INFO  c.b.s.b.controller.LeadController - Webhook received | Endpoint: %s | LeadId: %s
+2025-08-21 20:41:18 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 12796 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 20:41:18 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 20:41:56 INFO  c.b.s.b.BackendLeadsApplication - Started BackendLeadsApplication in 40.175 seconds (process running for 401.346)
+2025-08-21 20:42:03 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 12796 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 20:42:03 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 20:42:41 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 12796 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 20:42:41 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 20:43:26 INFO  c.b.s.b.BackendLeadsApplication - Started BackendLeadsApplication in 45.862 seconds (process running for 491.756)
+2025-08-21 20:44:49 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:44:49.723621100Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 20:44:51 INFO  c.b.s.b.controller.LeadController - Webhook received | Endpoint: /leads/receive | LeadId: 3
+2025-08-21 20:46:12 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 12796 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 20:46:12 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 20:46:50 INFO  c.b.s.b.BackendLeadsApplication - Started BackendLeadsApplication in 38.999 seconds (process running for 695.271)
+2025-08-21 20:47:53 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:47:53.360917100Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 20:48:14 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:48:14.973240Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 20:50:35 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:50:35.478660Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 20:50:39 INFO  c.b.s.b.controller.LeadController - Webhook received | Endpoint: /leads/receive | LeadId: null
+2025-08-21 20:52:08 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:52:08.624410600Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 20:52:10 INFO  c.b.s.b.controller.LeadController - Webhook received | Endpoint: /leads/receive | LeadId: null
+2025-08-21 20:53:13 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:53:13.009160300Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 20:53:52 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:53:52.194087800Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 20:53:55 INFO  c.b.s.b.controller.LeadController - Webhook received | Endpoint: /leads/receive | LeadId: null
+2025-08-21 20:56:15 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 6532 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 20:56:15 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 20:57:11 INFO  c.b.s.b.BackendLeadsApplication - Started BackendLeadsApplication in 61.977 seconds (process running for 70.624)
+2025-08-21 20:57:16 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:57:15.932747800Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 20:57:21 INFO  c.b.s.b.controller.LeadController - Webhook received | Endpoint: /leads/receive | LeadId: 4
+2025-08-21 20:57:31 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:57:31.948724800Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 20:57:45 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:57:45.714003600Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 20:58:19 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:58:19.681487Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 20:58:43 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:58:43.171380700Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 20:59:07 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:59:07.570843800Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 20:59:23 INFO  c.b.s.b.security.hmac.hmacAuthFilter - Webhook received | Timestamp: 2025-08-21T23:59:23.082364800Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 21:00:41 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 6532 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 21:00:41 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 21:01:29 INFO  c.b.s.b.BackendLeadsApplication - Started BackendLeadsApplication in 50.309 seconds (process running for 328.582)
+2025-08-21 21:01:42 INFO  c.b.s.b.security.hmac.hmacAuthFilter -  received | Timestamp: 2025-08-22T00:01:42.784705200Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 21:01:58 INFO  c.b.s.b.security.hmac.hmacAuthFilter -  received | Timestamp: 2025-08-22T00:01:57.998704200Z | IP: 0:0:0:0:0:0:0:1 | User-Agent: PostmanRuntime/7.39.1 | Status: 200
+2025-08-21 21:05:12 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 6532 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 21:05:12 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 21:09:40 INFO  c.b.s.b.BackendLeadsApplication - Starting BackendLeadsApplication using Java 23.0.2 with PID 5640 (C:\Users\ygorl\vsCode - IT\Java\backend-leads\target\classes started by ygorl in C:\Users\ygorl\vsCode - IT\Java\backend-leads)
+2025-08-21 21:09:40 INFO  c.b.s.b.BackendLeadsApplication - No active profile set, falling back to 1 default profile: "default"
+2025-08-21 21:10:59 INFO  c.b.s.b.BackendLeadsApplication - Started BackendLeadsApplication in 88.844 seconds (process running for 101.841)

@@ -35,8 +35,10 @@ public class hmacAuthFilter extends OncePerRequestFilter {
 
     if (receivedSignature == null) {
       log.warn(
-          "Webhook rejected | Timestamp: %s | IP: %s | User-Agent: %s | Status: 401 | Reason: Missing signature",
-          timestamp, ip, userAgent);
+          "Webhook rejected | Timestamp: {} | IP: {} | User-Agent: {} | Status: 401 | Reason: Missing signature",
+          timestamp,
+          ip,
+          userAgent);
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing signature");
       return;
     }
@@ -59,21 +61,27 @@ public class hmacAuthFilter extends OncePerRequestFilter {
 
       if (!MessageDigest.isEqual(expectedSignature.getBytes(), receivedSignature.getBytes())) {
         log.warn(
-            "Webhook rejected | Timestamp: %s | IP: %s | User-Agent: %s | Status: 401 | Reason: Invalid signature",
-            timestamp, ip, userAgent);
+            "Webhook rejected | Timestamp: {} | IP: {} | User-Agent: {} | Status: 401 | Reason: Invalid signature",
+            timestamp,
+            ip,
+            userAgent);
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid signature");
         return;
       }
 
       log.info(
-          "Webhook received | Timestamp: %s | IP: %s | User-Agent: %s | Status: 200",
-          timestamp, ip, userAgent);
+          "Requisition Accepted | Timestamp: {} | IP: {} | User-Agent: {} | Status: 200",
+          timestamp,
+          ip,
+          userAgent);
       filterChain.doFilter(wrappedRequest, response);
 
     } catch (Exception e) {
       log.error(
-          "Webhook error | Timestamp: %s | IP: %s | User-Agent: %s | Status: 500 | Reason: %s",
-          timestamp, ip, e.getMessage());
+          "Webhook error | Timestamp: {} | IP: {} | User-Agent: {} | Status: 500 | Reason: {}",
+          timestamp,
+          ip,
+          e.getMessage());
       response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Signature error");
     }
   }

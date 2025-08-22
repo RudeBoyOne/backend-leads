@@ -27,12 +27,12 @@ public class LeadController {
     String endpoint = request.getRequestURI();
     Lead lead = leadService.ConvertDTO(dto);
     Long leadId = (lead != null) ? lead.getId() : null;
-    log.info("Webhook received | Endpoint: %s | LeadId: %s", endpoint, leadId);
+    log.info("Webhook received | Endpoint: {} | LeadId: {}", endpoint, leadId);
 
     return ResponseEntity.ok().build();
   }
 
-  @GetMapping("/list")
+  @GetMapping("/search")
   public ResponseEntity<?> getLeads(
       @RequestParam(required = false) String status,
       @RequestParam(required = false) Long corretorId,
