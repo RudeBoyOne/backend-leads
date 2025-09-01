@@ -2,9 +2,8 @@ spring:
   application:
     name: backend-leads
   datasource:
-    url: jdbc:postgresql://localhost:5432/meubanco
-    username: usuario
-    password: senha
-#    driver-class-name: org.postgresql.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:meubanco}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:usuario}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:senha}}
   jpa:
     show-sql: false

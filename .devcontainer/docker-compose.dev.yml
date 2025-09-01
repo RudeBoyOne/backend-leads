@@ -1,0 +1,41 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-usuario}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-senha}
+      POSTGRES_DB: ${DB_NAME:-meubanco}
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/dev.dockerfile
+    volumes:
+      - ..:/workspace:cached
+      - maven-cache:/root/.m2
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: meubanco
+      DB_USER: usuario
+      DB_PASSWORD: senha
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/meubanco
+      SPRING_DATASOURCE_USERNAME: usuario
+      SPRING_DATASOURCE_PASSWORD: senha
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["sleep", "infinity"]
+
+volumes:
+  pgdata-dev:
+  maven-cache:

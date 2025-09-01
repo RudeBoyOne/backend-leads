@@ -1,0 +1,47 @@
+{
+  "name": "backend-leads",
+  "dockerComposeFile": ["docker-compose.dev.yml"],
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "21"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "java.configuration.runtimes": [
+          {
+            "name": "JavaSE-21",
+            "path": "/usr/lib/jvm/msopenjdk-current"
+          }
+        ],
+        "java.format.settings.url": ".vscode/eclipse-java-google-style.xml"
+      },
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "pivotal.vscode-spring-boot",
+        "vmware.vscode-spring-boot",
+        "redhat.vscode-yaml",
+        "editorconfig.editorconfig"
+      ]
+    }
+  },
+  "remoteEnv": {
+    "SPRING_PROFILES_ACTIVE": "dev",
+    "DB_HOST": "postgres",
+    "DB_PORT": "5432",
+    "DB_NAME": "meubanco",
+    "DB_USER": "usuario",
+    "DB_PASSWORD": "senha"
+  },
+  "postCreateCommand": "mvn -q -DskipTests install",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": { "label": "Spring Boot" },
+    "5432": { "label": "PostgreSQL" }
+  },
+  "runServices": ["postgres", "app"],
+  "shutdownAction": "stopCompose"
+}
