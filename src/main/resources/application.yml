@@ -10,3 +10,9 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:senha}}
   jpa:
     show-sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+hmac:
+  secret: "${HMAC_SECRET}"

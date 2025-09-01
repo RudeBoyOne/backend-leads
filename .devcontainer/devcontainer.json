@@ -34,7 +34,8 @@
     "DB_PORT": "5432",
     "DB_NAME": "meubanco",
     "DB_USER": "usuario",
-    "DB_PASSWORD": "senha"
+    "DB_PASSWORD": "senha",
+    "HMAC_SECRET": "minha-senha-secreta"
   },
   "postCreateCommand": "mvn -q -DskipTests install",
   "forwardPorts": [8080],
