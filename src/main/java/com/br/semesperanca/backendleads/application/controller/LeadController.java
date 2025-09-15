@@ -22,12 +22,14 @@ public class LeadController {
 
   @PostMapping("/receive")
   public ResponseEntity<Void> receive(
-          @Valid @RequestBody LeadReceivedNotificationDTO receivedNotificationDTO, HttpServletRequest request) {
+      @Valid @RequestBody LeadReceivedNotificationDTO receivedNotificationDTO,
+      HttpServletRequest request) {
 
-      leadService.receiveLead(receivedNotificationDTO);
+    leadService.receiveLead(receivedNotificationDTO);
 
-      String endpoint = request.getRequestURI();
-      log.info("Received | Endpoint: {} | LeadId: {}", endpoint, receivedNotificationDTO.originLeadId());
+    String endpoint = request.getRequestURI();
+    log.info(
+        "Received | Endpoint: {} | LeadId: {}", endpoint, receivedNotificationDTO.originLeadId());
 
     return ResponseEntity.ok().build();
   }

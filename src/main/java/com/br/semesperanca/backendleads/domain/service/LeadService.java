@@ -10,33 +10,41 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class LeadService {
-    private final LeadRepository leadRepository;
+  private final LeadRepository leadRepository;
 
-    public LeadService(LeadRepository leadRepository) {
-        this.leadRepository = leadRepository;
+  public LeadService(LeadRepository leadRepository) {
+    this.leadRepository = leadRepository;
+  }
+
+  public void receiveLead(LeadReceivedNotificationDTO receivedNotificationDTO) {
+    System.out.println("Received Lead Notification DTO: " + receivedNotificationDTO);
+  }
+
+  public Page<Lead> findLeads(
+      String status, Long corretorId, String origin, String search, Pageable pageable) {
+    Specification<Lead> spec = (root, query, cb) -> cb.conjunction();
+
+    if (status != null) {
+
+      spec = spec.and((root, query, cb) -> cb.equal(root.get("temperature"), status));
+    }
+    if (corretorId != null) {
+      spec =
+          spec.and(
+              (root, query, cb) -> cb.equal(root.get("clientListingId"), corretorId.toString()));
+    }
+    if (origin != null) {
+      spec = spec.and((root, query, cb) -> cb.equal(root.get("leadOrigin"), origin));
+    }
+    if (search != null) {
+      spec =
+          spec.and(
+              (root, query, cb) ->
+                  cb.or(
+                      cb.like(cb.lower(root.get("name")), "%" + search.toLowerCase() + "%"),
+                      cb.like(cb.lower(root.get("email")), "%" + search.toLowerCase() + "%")));
     }
 
-    public void receiveLead(LeadReceivedNotificationDTO receivedNotificationDTO) {
-        System.out.println("Received Lead Notification DTO: " + receivedNotificationDTO);
-    }
-
-    public Page<Lead> findLeads(String status, Long corretorId, String origin, String search, Pageable pageable) {
-        Specification<Lead> spec = (root, query, cb) -> cb.conjunction();
-
-        if (status != null) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("temperature"), status));
-        }
-        if (corretorId != null) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("clientListingId"), corretorId.toString()));
-        }
-        if (origin != null) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("leadOrigin"), origin));
-        }
-        if (search != null) {
-            spec = spec.and((root, query, cb) -> cb.or(cb.like(cb.lower(root.get("name")), "%" + search.toLowerCase() + "%"), cb.like(cb.lower(root.get("email")), "%" + search.toLowerCase() + "%")));
-        }
-
-        return leadRepository.findAll(spec, pageable);
-    }
-
+    return leadRepository.findAll(spec, pageable);
+  }
 }

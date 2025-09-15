@@ -1,10 +1,9 @@
 package com.br.semesperanca.backendleads.domain.model;
 
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.Instant;
 import java.util.UUID;
+import lombok.*;
 
 @Getter
 @Setter

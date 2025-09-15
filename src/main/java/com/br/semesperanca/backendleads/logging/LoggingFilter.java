@@ -2,10 +2,9 @@ package com.br.semesperanca.backendleads.logging;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
 
 @Component
 public class LoggingFilter implements Filter {
