@@ -1,4 +1,4 @@
-package com.br.semesperanca.backendleads.model;
+package com.br.semesperanca.backendleads.domain.model;
 
 import jakarta.persistence.*;
 import lombok.*;

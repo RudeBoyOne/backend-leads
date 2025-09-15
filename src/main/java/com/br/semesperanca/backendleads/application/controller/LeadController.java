@@ -1,8 +1,8 @@
-package com.br.semesperanca.backendleads.controller;
+package com.br.semesperanca.backendleads.application.controller;
 
-import com.br.semesperanca.backendleads.application.LeadDTO;
-import com.br.semesperanca.backendleads.model.Lead;
-import com.br.semesperanca.backendleads.service.LeadService;
+import com.br.semesperanca.backendleads.application.model.LeadReceivedNotificationDTO;
+import com.br.semesperanca.backendleads.domain.model.Lead;
+import com.br.semesperanca.backendleads.domain.service.LeadService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -21,13 +21,13 @@ public class LeadController {
   private final LeadService leadService;
 
   @PostMapping("/receive")
-  public ResponseEntity<Void> receiveLead(
-      @Valid @RequestBody LeadDTO dto, HttpServletRequest request) {
+  public ResponseEntity<Void> receive(
+          @Valid @RequestBody LeadReceivedNotificationDTO receivedNotificationDTO, HttpServletRequest request) {
 
-    String endpoint = request.getRequestURI();
-    Lead lead = leadService.ConvertDTO(dto);
-    Long leadId = (lead != null) ? lead.getId() : null;
-    log.info("Webhook received | Endpoint: {} | LeadId: {}", endpoint, leadId);
+      leadService.receiveLead(receivedNotificationDTO);
+
+      String endpoint = request.getRequestURI();
+      log.info("Received | Endpoint: {} | LeadId: {}", endpoint, receivedNotificationDTO.originLeadId());
 
     return ResponseEntity.ok().build();
   }
