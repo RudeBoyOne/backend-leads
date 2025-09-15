@@ -1,8 +1,10 @@
 package com.br.semesperanca.backendleads.model;
 
 import jakarta.persistence.*;
-import java.time.Instant;
 import lombok.*;
+
+import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -15,7 +17,7 @@ public class Lead {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  private UUID id;
 
   private String leadOrigin;
 
@@ -30,8 +32,6 @@ public class Lead {
   private String name;
 
   private String email;
-
-  private String ddd;
 
   private String phone;
 

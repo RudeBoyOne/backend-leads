@@ -3,12 +3,13 @@ package com.br.semesperanca.backendleads.service;
 import com.br.semesperanca.backendleads.application.LeadDTO;
 import com.br.semesperanca.backendleads.model.Lead;
 import com.br.semesperanca.backendleads.repository.LeadRepository;
-import java.time.Instant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+
+import java.time.Instant;
 
 @Service
 public class LeadService {
@@ -23,7 +24,6 @@ public class LeadService {
     lead.setClientListingId(dto.clientListingId());
     lead.setName(dto.name());
     lead.setEmail(dto.email());
-    lead.setDdd(dto.ddd());
     lead.setLeadOrigin(dto.leadOrigin());
     lead.setOriginListingId(dto.originListingId());
     lead.setPhone(dto.phone());
