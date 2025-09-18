@@ -22,9 +22,12 @@ spring:
       mail:
         smtp:
           auth: true
-          starttls:
+          ssl:
             enable: true
-    default-encoding: UTF-8
+          starttls:
+            enable: false
+        transport:
+          protocol: smtp
 
 app:
   mail:
