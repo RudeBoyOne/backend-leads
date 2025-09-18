@@ -1,23 +1,24 @@
 package com.br.semesperanca.backendleads.domain.service;
 
 import com.br.semesperanca.backendleads.application.model.LeadReceivedNotificationDTO;
+import com.br.semesperanca.backendleads.configuration.MailProperties;
 import com.br.semesperanca.backendleads.domain.model.Lead;
 import com.br.semesperanca.backendleads.domain.repository.LeadRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+@RequiredArgsConstructor
 @Service
 public class LeadService {
   private final LeadRepository leadRepository;
-
-  public LeadService(LeadRepository leadRepository) {
-    this.leadRepository = leadRepository;
-  }
+  private final EmailService emailService;
+  private final MailProperties mailProperties;
 
   public void receiveLead(LeadReceivedNotificationDTO receivedNotificationDTO) {
-    System.out.println("Received Lead Notification DTO: " + receivedNotificationDTO);
+    emailService.sendLeadReceived(receivedNotificationDTO, mailProperties.getNotifyTo());
   }
 
   public Page<Lead> findLeads(

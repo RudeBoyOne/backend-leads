@@ -13,6 +13,20 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  mail:
+    host: smtp.hostinger.com
+    port: 465
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    default-encoding: UTF-8
 
-hmac:
-  secret: "${HMAC_SECRET}"
+app:
+  mail:
+    from: no-reply@lucasfncode.com.br
+    notify-to: dev@lucasfncode.com.br

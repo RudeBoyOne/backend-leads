@@ -42,6 +42,9 @@ public class LeadController {
       @RequestParam(required = false) String search,
       Pageable pageable) {
     Page<Lead> leads = leadService.findLeads(status, corretorId, origin, search, pageable);
+
+    log.info("Fetched Leads | Count: {}", leads.getTotalElements());
+
     return ResponseEntity.ok(leads);
   }
 }

@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS leads
 (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    origin_lead_id VARCHAR(100) NOT NULL UNIQUE,
+    origin_lead_id VARCHAR(100) NOT NULL,
     origin_listing_id VARCHAR(100) NOT NULL,
     lead_origin VARCHAR(255) NOT NULL,
     client_listing_id VARCHAR(100) NOT NULL,
