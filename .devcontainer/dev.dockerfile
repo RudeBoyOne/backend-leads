@@ -13,4 +13,3 @@ WORKDIR /workspace
 
 # Default shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-

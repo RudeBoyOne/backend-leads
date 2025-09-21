@@ -5,6 +5,7 @@ import com.br.semesperanca.backendleads.domain.model.Lead;
 import com.br.semesperanca.backendleads.domain.service.LeadService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -46,5 +47,11 @@ public class LeadController {
     log.info("Fetched Leads | Count: {}", leads.getTotalElements());
 
     return ResponseEntity.ok(leads);
+  }
+
+  @GetMapping("/search/{id}")
+  public ResponseEntity<Lead> getLeadById(@PathVariable("id") UUID id) {
+    Lead lead = leadService.getById(id);
+    return ResponseEntity.ok(lead);
   }
 }
