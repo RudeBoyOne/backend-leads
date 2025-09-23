@@ -2,6 +2,7 @@ package com.br.semesperanca.backendleads.application.controller;
 
 import com.br.semesperanca.backendleads.application.model.LeadReceivedNotificationDTO;
 import com.br.semesperanca.backendleads.domain.model.Lead;
+import com.br.semesperanca.backendleads.domain.model.LeadDTO;
 import com.br.semesperanca.backendleads.domain.service.LeadService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -50,8 +51,7 @@ public class LeadController {
   }
 
   @GetMapping("/search/{id}")
-  public ResponseEntity<Lead> getLeadById(@PathVariable("id") UUID id) {
-    Lead lead = leadService.getById(id);
-    return ResponseEntity.ok(lead);
+  public ResponseEntity<LeadDTO> getLeadById(@PathVariable("id") UUID id) {
+    return ResponseEntity.ok(leadService.getById(id));
   }
 }

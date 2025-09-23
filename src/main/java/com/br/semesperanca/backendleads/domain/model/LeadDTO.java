@@ -19,7 +19,7 @@ public record LeadDTO(
     @NotBlank(message = "Message is required") String message,
     @NotBlank(message = "Temperature is required") String temperature,
     @NotBlank(message = "Transaction type is required") String transactionType) {
-  public LeadDTO fromLead(Lead lead) {
+  public static LeadDTO fromLead(Lead lead) {
     return new LeadDTO(
         lead.getLeadOrigin(),
         lead.getTimestamp().toString(),
@@ -34,7 +34,7 @@ public record LeadDTO(
         lead.getTransactionType());
   }
 
-  public Lead toLead(LeadDTO leadDTO) {
+  public static Lead toLead(LeadDTO leadDTO) {
     return Lead.builder()
         .leadOrigin(leadDTO.leadOrigin())
         .timestamp(Instant.parse(leadDTO.timestamp()))

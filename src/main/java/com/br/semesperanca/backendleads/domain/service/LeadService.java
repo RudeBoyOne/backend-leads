@@ -3,6 +3,7 @@ package com.br.semesperanca.backendleads.domain.service;
 import com.br.semesperanca.backendleads.application.model.LeadReceivedNotificationDTO;
 import com.br.semesperanca.backendleads.configuration.MailProperties;
 import com.br.semesperanca.backendleads.domain.model.Lead;
+import com.br.semesperanca.backendleads.domain.model.LeadDTO;
 import com.br.semesperanca.backendleads.domain.repository.LeadRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -50,12 +51,14 @@ public class LeadService {
     return leadRepository.findAll(spec, pageable);
   }
 
-  public Lead getById(UUID id) {
+  public LeadDTO getById(UUID id) {
     if (id == null) {
       throw new IllegalArgumentException("the id cant be none.");
     }
-    return leadRepository
-        .findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("this id dont exist"));
+
+    return LeadDTO.fromLead(
+        leadRepository
+            .findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("this id dont exist")));
   }
 }
