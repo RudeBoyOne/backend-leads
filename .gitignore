@@ -34,3 +34,6 @@ build/
 
 ### Logs ###
 logs
+
+### Auth credentials ### 
+application-local.yml
