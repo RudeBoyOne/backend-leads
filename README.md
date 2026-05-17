@@ -123,28 +123,3 @@ Java Format**.
     ```bash
      mvnw.cmd compile
     ```
-## 📌 Como vincular um Pull Request à issue correspondente
-
-Ao criar um Pull Request (PR), é importante vinculá-lo à issue que originou a tarefa. Isso ajuda a manter o histórico claro e facilita o rastreamento do progresso do projeto.
-
-### ✅ Passo a passo:
-
-1. Certifique-se de que sua branch está relacionada à issue.  
-   Exemplo: `feat/123-adicionar-autenticacao` (onde `123` é o número da issue).
-
-2. Na descrição do PR, adicione uma das palavras-chave abaixo, seguidas do número da issue:
-
-   - `Closes #123`
-   - `Resolve #123`
-   - `Fixes #123`
-
-   Isso fará com que o GitHub vincule automaticamente o PR à issue e feche a issue quando o PR for mergeado na branch principal.
-
-### 📌 Exemplo
-
-```markdown
-### Descrição
-Este PR implementa a autenticação de usuários usando JWT.
-
-### Issue relacionada
-Closes #123
