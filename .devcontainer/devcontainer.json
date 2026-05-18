@@ -37,8 +37,7 @@
     "DB_PASSWORD": "senha",
     "HMAC_SECRET": "minha-senha-secreta"
   },
-  "postCreateCommand": "mvn -q -DskipTests install",
-  "forwardPorts": [8080],
+"postCreateCommand": "cd /workspace && mvn -q -DskipTests install -Dspotless.apply.skip=true",  "forwardPorts": [8080],
   "portsAttributes": {
     "8080": { "label": "Spring Boot" },
     "5432": { "label": "PostgreSQL" }
