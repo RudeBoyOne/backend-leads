@@ -29,9 +29,6 @@ banco:
 > **Nota:** O volume `pgdata` é utilizado para persistir os dados do banco mesmo que o container seja parado.
 
 
-> Setar a variavel de ambiente no terminal que estiver rodando a aplicacao: $env:HMAC_SECRET="RoffeImoveis"
-
-> Adicionar este cabecalho no postman ou outro testador de enpoints: X-SIGNATURE
 
 ---
 
