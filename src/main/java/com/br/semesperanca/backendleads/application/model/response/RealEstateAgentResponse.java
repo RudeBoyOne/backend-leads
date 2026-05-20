@@ -1,4 +1,4 @@
-package com.br.semesperanca.backendleads.application.dto.response;
+package com.br.semesperanca.backendleads.application.model.response;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

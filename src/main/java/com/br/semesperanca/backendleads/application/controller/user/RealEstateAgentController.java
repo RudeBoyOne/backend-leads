@@ -1,8 +1,8 @@
 package com.br.semesperanca.backendleads.application.controller.user;
 
-import com.br.semesperanca.backendleads.application.dto.request.CreateRealEstateAgentRequest;
-import com.br.semesperanca.backendleads.application.dto.request.UpdateRealEstateAgentRequest;
-import com.br.semesperanca.backendleads.application.dto.response.RealEstateAgentResponse;
+import com.br.semesperanca.backendleads.application.model.request.CreateRealEstateAgentRequest;
+import com.br.semesperanca.backendleads.application.model.request.UpdateRealEstateAgentRequest;
+import com.br.semesperanca.backendleads.application.model.response.RealEstateAgentResponse;
 import com.br.semesperanca.backendleads.domain.service.user.RealEstateAgentService;
 import java.util.List;
 import java.util.UUID;

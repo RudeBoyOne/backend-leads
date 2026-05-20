@@ -1,8 +1,8 @@
 package com.br.semesperanca.backendleads.domain.service.user;
 
-import com.br.semesperanca.backendleads.application.dto.request.CreateRealEstateAgentRequest;
-import com.br.semesperanca.backendleads.application.dto.request.UpdateRealEstateAgentRequest;
-import com.br.semesperanca.backendleads.application.dto.response.RealEstateAgentResponse;
+import com.br.semesperanca.backendleads.application.model.request.CreateRealEstateAgentRequest;
+import com.br.semesperanca.backendleads.application.model.request.UpdateRealEstateAgentRequest;
+import com.br.semesperanca.backendleads.application.model.response.RealEstateAgentResponse;
 import com.br.semesperanca.backendleads.domain.model.Role;
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent;
 import com.br.semesperanca.backendleads.domain.repository.RoleRepository;
