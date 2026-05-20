@@ -50,10 +50,10 @@ app:
   mail:
     from: no-reply@lucasfncode.com.br
     notify-to: dev@lucasfncode.com.br
-  app:
-  jwt:
+  jwt:                             # Removido o "app:" duplicado e corrigida a indentação
     secret: ${JWT_SECRET}
     expiration: 86400000
+
 
 management:
   endpoints:
