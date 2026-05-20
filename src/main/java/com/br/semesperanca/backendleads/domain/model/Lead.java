@@ -11,20 +11,26 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "leads")
+@Table(name = "lead")
 public class Lead {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private UUID id;
 
-  private String leadOrigin;
+  private UUID realEstateAgencyId;
 
-  private Instant timestamp;
+  private UUID realEstateAgentId;
+
+  private UUID portalId;
+
+  private UUID funnelStageId;
 
   private String originLeadId;
 
   private String originListingId;
+
+  private String leadOrigin;
 
   private String clientListingId;
 
@@ -32,11 +38,21 @@ public class Lead {
 
   private String email;
 
-  private String phone;
+  private String phoneNumber;
 
   private String message;
 
   private String temperature;
 
   private String transactionType;
+
+  private String source;
+
+  private String status;
+
+  private Instant timestamp;
+
+  private Instant createdAt;
+
+  private Instant updatedAt;
 }

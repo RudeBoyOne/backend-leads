@@ -28,8 +28,7 @@ public class LeadService {
     Specification<Lead> spec = (root, query, cb) -> cb.conjunction();
 
     if (status != null) {
-
-      spec = spec.and((root, query, cb) -> cb.equal(root.get("temperature"), status));
+      spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
     }
     if (corretorId != null) {
       spec =

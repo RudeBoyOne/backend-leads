@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
+import java.util.UUID;
 
 public record LeadDTO(
     @NotBlank(message = "Lead origin is required") String leadOrigin,
@@ -18,7 +19,16 @@ public record LeadDTO(
         String phone,
     @NotBlank(message = "Message is required") String message,
     @NotBlank(message = "Temperature is required") String temperature,
-    @NotBlank(message = "Transaction type is required") String transactionType) {
+    @NotBlank(message = "Transaction type is required") String transactionType,
+    UUID realEstateAgencyId,
+    UUID realEstateAgentId,
+    UUID portalId,
+    UUID funnelStageId,
+    String source,
+    @NotBlank(message = "Status is required") String status,
+    String createdAt,
+    String updatedAt) {
+
   public static LeadDTO fromLead(Lead lead) {
     return new LeadDTO(
         lead.getLeadOrigin(),
@@ -28,10 +38,18 @@ public record LeadDTO(
         lead.getClientListingId(),
         lead.getName(),
         lead.getEmail(),
-        lead.getPhone(),
+        lead.getPhoneNumber(),
         lead.getMessage(),
         lead.getTemperature(),
-        lead.getTransactionType());
+        lead.getTransactionType(),
+        lead.getRealEstateAgencyId(),
+        lead.getRealEstateAgentId(),
+        lead.getPortalId(),
+        lead.getFunnelStageId(),
+        lead.getSource(),
+        lead.getStatus(),
+        lead.getCreatedAt() != null ? lead.getCreatedAt().toString() : null,
+        lead.getUpdatedAt() != null ? lead.getUpdatedAt().toString() : null);
   }
 
   public static Lead toLead(LeadDTO leadDTO) {
@@ -43,10 +61,16 @@ public record LeadDTO(
         .clientListingId(leadDTO.clientListingId())
         .name(leadDTO.name())
         .email(leadDTO.email())
-        .phone(leadDTO.phone())
+        .phoneNumber(leadDTO.phone())
         .message(leadDTO.message())
         .temperature(leadDTO.temperature())
         .transactionType(leadDTO.transactionType())
+        .realEstateAgencyId(leadDTO.realEstateAgencyId())
+        .realEstateAgentId(leadDTO.realEstateAgentId())
+        .portalId(leadDTO.portalId())
+        .funnelStageId(leadDTO.funnelStageId())
+        .source(leadDTO.source())
+        .status(leadDTO.status())
         .build();
   }
 }
