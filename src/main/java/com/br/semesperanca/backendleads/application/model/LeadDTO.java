@@ -1,5 +1,6 @@
-package com.br.semesperanca.backendleads.domain.model;
+package com.br.semesperanca.backendleads.application.model;
 
+import com.br.semesperanca.backendleads.domain.model.Lead;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

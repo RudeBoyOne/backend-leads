@@ -6,6 +6,7 @@ import com.br.semesperanca.backendleads.application.model.response.RealEstateAge
 import com.br.semesperanca.backendleads.domain.service.user.RealEstateAgentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,7 @@ public class RealEstateAgentController {
   @PreAuthorize("hasAnyRole('FULL_ADMIN', 'ADMIN')")
   @Operation(summary = "Criar corretor", description = "Requer FULL_ADMIN ou ADMIN")
   public ResponseEntity<RealEstateAgentResponse> create(
-      @RequestBody CreateRealEstateAgentRequest request) {
+      @RequestBody @Valid CreateRealEstateAgentRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
   }
 
@@ -52,16 +53,8 @@ public class RealEstateAgentController {
       summary = "Atualizar corretor",
       description = "Requer FULL_ADMIN, ADMIN ou REAL_ESTATE_AGENT")
   public ResponseEntity<RealEstateAgentResponse> update(
-      @PathVariable UUID id, @RequestBody UpdateRealEstateAgentRequest request) {
+      @PathVariable UUID id, @RequestBody @Valid UpdateRealEstateAgentRequest request) {
     return ResponseEntity.ok(service.update(id, request));
-  }
-
-  @DeleteMapping("/{id}")
-  @PreAuthorize("hasAnyRole('FULL_ADMIN', 'ADMIN')")
-  @Operation(summary = "Deletar corretor", description = "Requer FULL_ADMIN ou ADMIN")
-  public ResponseEntity<Void> delete(@PathVariable UUID id) {
-    service.delete(id);
-    return ResponseEntity.noContent().build();
   }
 
   @PatchMapping("/{id}/toggle-active")

@@ -1,9 +1,9 @@
 package com.br.semesperanca.backendleads.domain.service;
 
+import com.br.semesperanca.backendleads.application.model.LeadDTO;
 import com.br.semesperanca.backendleads.application.model.LeadReceivedNotificationDTO;
 import com.br.semesperanca.backendleads.configuration.MailProperties;
 import com.br.semesperanca.backendleads.domain.model.Lead;
-import com.br.semesperanca.backendleads.domain.model.LeadDTO;
 import com.br.semesperanca.backendleads.domain.repository.LeadRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
