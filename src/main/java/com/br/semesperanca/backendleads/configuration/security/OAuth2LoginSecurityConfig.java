@@ -20,6 +20,8 @@ public class OAuth2LoginSecurityConfig {
   private final CustomJwtDecoder customJwtDecoder;
   private final CustomJwtAuthenticationConverter customJwtAuthenticationConverter;
   private final OAuth2SuccessHandler oAuth2SuccessHandler;
+  private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+  private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
   @Bean
   @Order(1)
@@ -36,10 +38,13 @@ public class OAuth2LoginSecurityConfig {
                     .authenticated())
         .oauth2ResourceServer(
             oauth2 ->
-                oauth2.jwt(
-                    jwt ->
-                        jwt.decoder(customJwtDecoder)
-                            .jwtAuthenticationConverter(customJwtAuthenticationConverter)));
+                oauth2
+                    .jwt(
+                        jwt ->
+                            jwt.decoder(customJwtDecoder)
+                                .jwtAuthenticationConverter(customJwtAuthenticationConverter))
+                    .authenticationEntryPoint(customAuthenticationEntryPoint))
+        .exceptionHandling(ex -> ex.accessDeniedHandler(customAccessDeniedHandler));
 
     return http.build();
   }

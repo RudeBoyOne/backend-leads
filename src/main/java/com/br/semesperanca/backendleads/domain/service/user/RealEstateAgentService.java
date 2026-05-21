@@ -70,11 +70,6 @@ public class RealEstateAgentService {
   }
 
   @Transactional
-  public void delete(UUID id) {
-    repository.delete(findAgentById(id));
-  }
-
-  @Transactional
   public RealEstateAgentResponse toggleActive(UUID id) {
     RealEstateAgent agent = findAgentById(id);
     agent.setActive(!agent.isActive());
