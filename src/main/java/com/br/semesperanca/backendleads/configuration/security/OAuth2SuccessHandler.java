@@ -39,7 +39,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     String email = oauthToken.getPrincipal().getAttribute("email");
     String name = oauthToken.getPrincipal().getAttribute("name");
 
-    // Verifica se é OidcUser (tem ID Token) ou OAuth2User comum
     String tokenValue;
     if (oauthToken.getPrincipal() instanceof OidcUser oidcUser) {
       tokenValue = oidcUser.getIdToken().getTokenValue(); // ID Token (JWT)

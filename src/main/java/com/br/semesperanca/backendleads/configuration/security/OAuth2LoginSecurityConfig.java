@@ -24,11 +24,16 @@ public class OAuth2LoginSecurityConfig {
   @Bean
   @Order(1)
   public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
-    http.securityMatcher("/api/**")
+    http.securityMatcher("/api/**", "/swagger-ui/**", "/v3/api-docs/**")
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/api/auth/login").permitAll().anyRequest().authenticated())
+                auth.requestMatchers("/api/auth/login")
+                    .permitAll()
+                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated())
         .oauth2ResourceServer(
             oauth2 ->
                 oauth2.jwt(
