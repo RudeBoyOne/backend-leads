@@ -1,9 +1,18 @@
 app:
   jwt:
-    secret: bXlzdXBlcnNlY3JldGtlIHVzZXJuYW1lIGFuZCBwYXNzd29yZA==
+    secret: Sd0owqS1hgEhV9+7sEGS4k/YIcGiGj9F1gOcIEISrMg=
+    expiration: 86400000
+
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/meubanco
+    username: usuario
+    password: senha
   security:
     oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://accounts.google.com
       client:
         registration:
           google:

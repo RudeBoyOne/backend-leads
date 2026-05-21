@@ -9,6 +9,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,35 +19,41 @@ public class RealEstateAgentController {
 
   private final RealEstateAgentService service;
 
+  @GetMapping
+  @PreAuthorize("hasAnyRole('FULL_ADMIN', 'ADMIN')")
+  public ResponseEntity<List<RealEstateAgentResponse>> findAll() {
+    return ResponseEntity.ok(service.findAll());
+  }
+
   @PostMapping
+  @PreAuthorize("hasAnyRole('FULL_ADMIN', 'ADMIN')")
   public ResponseEntity<RealEstateAgentResponse> create(
       @RequestBody CreateRealEstateAgentRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("hasAnyRole('FULL_ADMIN', 'ADMIN', 'REAL_ESTATE_AGENT')")
   public ResponseEntity<RealEstateAgentResponse> findById(@PathVariable UUID id) {
     return ResponseEntity.ok(service.findById(id));
   }
 
-  @GetMapping
-  public ResponseEntity<List<RealEstateAgentResponse>> findAll() {
-    return ResponseEntity.ok(service.findAll());
-  }
-
   @PutMapping("/{id}")
+  @PreAuthorize("hasAnyRole('FULL_ADMIN', 'ADMIN', 'REAL_ESTATE_AGENT')")
   public ResponseEntity<RealEstateAgentResponse> update(
       @PathVariable UUID id, @RequestBody UpdateRealEstateAgentRequest request) {
     return ResponseEntity.ok(service.update(id, request));
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasAnyRole('FULL_ADMIN', 'ADMIN')")
   public ResponseEntity<Void> delete(@PathVariable UUID id) {
     service.delete(id);
     return ResponseEntity.noContent().build();
   }
 
   @PatchMapping("/{id}/toggle-active")
+  @PreAuthorize("hasAnyRole('FULL_ADMIN', 'ADMIN')")
   public ResponseEntity<RealEstateAgentResponse> toggleActive(@PathVariable UUID id) {
     return ResponseEntity.ok(service.toggleActive(id));
   }
