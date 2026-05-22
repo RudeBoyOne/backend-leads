@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import lombok.*;
+import lombok.Builder;
 import lombok.experimental.SuperBuilder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -39,16 +40,13 @@ public abstract class User implements UserDetails {
   @Column(name = "password", nullable = false)
   private String password;
 
-  @Column(name = "active", nullable = false)
-  private boolean active = true;
+  @Builder.Default private boolean active = true;
 
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt;
 
   @Column(name = "updated_at")
   private LocalDateTime updatedAt;
-
-  // ---- UserDetails ----
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -79,8 +77,6 @@ public abstract class User implements UserDetails {
   public boolean isEnabled() {
     return this.active;
   }
-
-  // ---- Audit ----
 
   @PrePersist
   public void prePersist() {
