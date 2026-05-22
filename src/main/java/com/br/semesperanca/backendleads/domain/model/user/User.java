@@ -7,14 +7,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import lombok.*;
-import lombok.Builder;
 import lombok.experimental.SuperBuilder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users") // 👈 era "user", corrija para "users"
 @Inheritance(strategy = InheritanceType.JOINED)
 @Getter
 @Setter
@@ -40,7 +39,9 @@ public abstract class User implements UserDetails {
   @Column(name = "password", nullable = false)
   private String password;
 
-  @Builder.Default private boolean active = true;
+  @Builder.Default
+  @Column(name = "active", nullable = false)
+  private boolean active = true;
 
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt;
