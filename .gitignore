@@ -37,3 +37,6 @@ build/
 
 ### Logs ###
 logs
+
+### Auth credentials ### 
+src/main/resources/application-local.yml

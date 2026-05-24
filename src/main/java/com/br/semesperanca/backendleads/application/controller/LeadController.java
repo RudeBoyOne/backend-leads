@@ -1,8 +1,8 @@
 package com.br.semesperanca.backendleads.application.controller;
 
+import com.br.semesperanca.backendleads.application.model.LeadDTO;
 import com.br.semesperanca.backendleads.application.model.LeadReceivedNotificationDTO;
 import com.br.semesperanca.backendleads.domain.model.Lead;
-import com.br.semesperanca.backendleads.domain.model.LeadDTO;
 import com.br.semesperanca.backendleads.domain.service.LeadService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
