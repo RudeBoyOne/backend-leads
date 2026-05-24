@@ -42,7 +42,7 @@ public class OAuth2LoginSecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/real-estate-agents/{id}")
                     .hasAnyRole("FULL_ADMIN", "ADMIN", "REAL_ESTATE_AGENT")
                     .requestMatchers(HttpMethod.PUT, "/api/real-estate-agents/{id}")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN", "REAL_ESTATE_AGENT")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
                     .requestMatchers(HttpMethod.PATCH, "/api/real-estate-agents/{id}/toggle-active")
                     .hasAnyRole("FULL_ADMIN", "ADMIN")
                     .anyRequest()
