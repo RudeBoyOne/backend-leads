@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
   private final RealEstateAgentRepository repository;
-  private final RoleRepository roleRepository; // 👈 adicione esse campo
+  private final RoleRepository roleRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
 
@@ -38,20 +38,21 @@ public class AuthService {
     }
 
     String token =
-        jwtService.generateToken(agent.getEmail(), agent.getRole().getName(), agent.getName());
+        jwtService.generateToken(agent.getId(), agent.getEmail(), agent.getRole().getName());
 
-    return new LoginResponse(token, agent.getName(), agent.getEmail(), agent.getRole().getName());
+    return new LoginResponse(token);
   }
 
   @Transactional
   public RealEstateAgentResponse createFullAdmin(CreateFullAdminRequest request) {
-    if (repository.existsByEmail(request.email())) { // 👈 minúsculo = instância
+    if (repository.existsByEmail(request.email())) {
+
       throw new RuntimeException("Email já cadastrado");
     }
 
     Role role =
         roleRepository
-            .findByName("FULL_ADMIN") // 👈 minúsculo = instância
+            .findByName("FULL_ADMIN")
             .orElseThrow(() -> new RuntimeException("Role não encontrada"));
 
     RealEstateAgent agent =
@@ -64,7 +65,7 @@ public class AuthService {
             .active(true)
             .build();
 
-    return toResponse(repository.save(agent)); // 👈 minúsculo = instância
+    return toResponse(repository.save(agent));
   }
 
   private RealEstateAgentResponse toResponse(RealEstateAgent agent) {
