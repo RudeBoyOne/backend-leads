@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -13,7 +13,6 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 @RequiredArgsConstructor
 public class OAuth2LoginSecurityConfig {
 
@@ -30,10 +29,22 @@ public class OAuth2LoginSecurityConfig {
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/api/auth/login")
+                auth.requestMatchers(HttpMethod.POST, "/api/auth/login")
                     .permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/auth/register/full-admin")
+                    .hasAnyRole("FULL_ADMIN")
+                    .requestMatchers(HttpMethod.GET, "/api/real-estate-agents")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/real-estate-agents")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
+                    .requestMatchers(HttpMethod.GET, "/api/real-estate-agents/{id}")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN", "REAL_ESTATE_AGENT")
+                    .requestMatchers(HttpMethod.PUT, "/api/real-estate-agents/{id}")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN", "REAL_ESTATE_AGENT")
+                    .requestMatchers(HttpMethod.PATCH, "/api/real-estate-agents/{id}/toggle-active")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
                     .anyRequest()
                     .authenticated())
         .oauth2ResourceServer(

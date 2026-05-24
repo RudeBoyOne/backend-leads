@@ -12,7 +12,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,14 +23,12 @@ public class RealEstateAgentController {
   private final RealEstateAgentService service;
 
   @GetMapping
-  @PreAuthorize("hasAnyRole('FULL_ADMIN', 'ADMIN')")
   @Operation(summary = "Listar corretores", description = "Requer FULL_ADMIN ou ADMIN")
   public ResponseEntity<List<RealEstateAgentResponse>> findAll() {
     return ResponseEntity.ok(service.findAll());
   }
 
   @PostMapping
-  @PreAuthorize("hasAnyRole('FULL_ADMIN', 'ADMIN')")
   @Operation(summary = "Criar corretor", description = "Requer FULL_ADMIN ou ADMIN")
   public ResponseEntity<RealEstateAgentResponse> create(
       @RequestBody @Valid CreateRealEstateAgentRequest request) {
@@ -39,7 +36,6 @@ public class RealEstateAgentController {
   }
 
   @GetMapping("/{id}")
-  @PreAuthorize("hasAnyRole('FULL_ADMIN', 'ADMIN', 'REAL_ESTATE_AGENT')")
   @Operation(
       summary = "Buscar corretor por ID",
       description = "Requer FULL_ADMIN, ADMIN ou REAL_ESTATE_AGENT")
@@ -48,7 +44,6 @@ public class RealEstateAgentController {
   }
 
   @PutMapping("/{id}")
-  @PreAuthorize("hasAnyRole('FULL_ADMIN', 'ADMIN', 'REAL_ESTATE_AGENT')")
   @Operation(
       summary = "Atualizar corretor",
       description = "Requer FULL_ADMIN, ADMIN ou REAL_ESTATE_AGENT")
@@ -58,7 +53,6 @@ public class RealEstateAgentController {
   }
 
   @PatchMapping("/{id}/toggle-active")
-  @PreAuthorize("hasAnyRole('FULL_ADMIN', 'ADMIN')")
   @Operation(summary = "Ativar/Desativar corretor", description = "Requer FULL_ADMIN ou ADMIN")
   public ResponseEntity<RealEstateAgentResponse> toggleActive(@PathVariable UUID id) {
     return ResponseEntity.ok(service.toggleActive(id));

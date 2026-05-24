@@ -10,8 +10,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -28,7 +28,6 @@ public class AuthController {
   }
 
   @PostMapping("/register/full-admin")
-  @PreAuthorize("hasRole('FULL_ADMIN')")
   @Operation(
       summary = "Criar FULL_ADMIN",
       description = "Cria um novo super administrador (requer FULL_ADMIN)")
