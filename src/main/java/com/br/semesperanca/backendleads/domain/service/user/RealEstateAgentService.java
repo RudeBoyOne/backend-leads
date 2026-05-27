@@ -7,6 +7,7 @@ import com.br.semesperanca.backendleads.domain.model.Role;
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent;
 import com.br.semesperanca.backendleads.domain.repository.RoleRepository;
 import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository;
+import com.br.semesperanca.backendleads.domain.repository.user.UserRepository;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -21,10 +22,11 @@ public class RealEstateAgentService {
   private final RealEstateAgentRepository repository;
   private final RoleRepository roleRepository;
   private final PasswordEncoder passwordEncoder;
+  private final UserRepository userRepository;
 
   @Transactional
   public RealEstateAgentResponse create(CreateRealEstateAgentRequest request) {
-    if (repository.existsByEmail(request.email())) {
+    if (userRepository.existsByEmail(request.email())) {
       throw new RuntimeException("Email já cadastrado");
     }
 

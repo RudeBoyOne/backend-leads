@@ -10,7 +10,5 @@ import org.springframework.stereotype.Repository;
 public interface RealEstateAgentRepository extends JpaRepository<RealEstateAgent, UUID> {
   Optional<RealEstateAgent> findByEmail(String email);
 
-  boolean existsByEmail(String email);
-
   boolean existsByCreci(String creci);
 }

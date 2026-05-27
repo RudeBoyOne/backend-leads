@@ -8,6 +8,7 @@ import com.br.semesperanca.backendleads.domain.model.Role;
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent;
 import com.br.semesperanca.backendleads.domain.repository.RoleRepository;
 import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository;
+import com.br.semesperanca.backendleads.domain.repository.user.UserRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +23,7 @@ public class AuthService {
   private final RoleRepository roleRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
+  private final UserRepository userRepository;
 
   public LoginResponse login(LoginRequest request) {
     RealEstateAgent agent =
@@ -45,7 +47,7 @@ public class AuthService {
 
   @Transactional
   public RealEstateAgentResponse createFullAdmin(CreateFullAdminRequest request) {
-    if (repository.existsByEmail(request.email())) {
+    if (userRepository.existsByEmail(request.email())) {
 
       throw new RuntimeException("Email já cadastrado");
     }
