@@ -1,4 +1,4 @@
-CREATE TABLE "user" (
+CREATE TABLE "users" (
     id                    UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     real_estate_agency_id UUID         REFERENCES real_estate_agency(id) ON DELETE CASCADE,
     role_id               UUID         NOT NULL REFERENCES role(id),
@@ -17,7 +17,7 @@ CREATE TABLE real_estate_agent (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT pk_real_estate_agent PRIMARY KEY (id),
     CONSTRAINT fk_real_estate_agent_user
-        FOREIGN KEY (id) REFERENCES "user"(id) ON DELETE CASCADE
+        FOREIGN KEY (id) REFERENCES "users"(id) ON DELETE CASCADE
 );
 
 CREATE TABLE manager (
@@ -27,7 +27,7 @@ CREATE TABLE manager (
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT pk_manager PRIMARY KEY (id),
     CONSTRAINT fk_manager_user
-        FOREIGN KEY (id) REFERENCES "user"(id) ON DELETE CASCADE
+        FOREIGN KEY (id) REFERENCES "users"(id) ON DELETE CASCADE
 );
 
 CREATE TABLE team (

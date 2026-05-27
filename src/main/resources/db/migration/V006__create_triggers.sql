@@ -7,7 +7,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_user_updated_at
-    BEFORE UPDATE ON "user"
+    BEFORE UPDATE ON "users"
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TRIGGER trg_agent_updated_at
