@@ -13,7 +13,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 @Entity
-@Table(name = "users")
+@Table(name = "\"users\"")
 @Inheritance(strategy = InheritanceType.JOINED)
 @Getter
 @Setter

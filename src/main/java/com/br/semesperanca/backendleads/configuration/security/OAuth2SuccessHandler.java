@@ -4,6 +4,7 @@ import com.br.semesperanca.backendleads.domain.model.Role;
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent;
 import com.br.semesperanca.backendleads.domain.repository.RoleRepository;
 import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository;
+import com.br.semesperanca.backendleads.domain.repository.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -24,6 +25,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
   private final OAuth2AuthorizedClientService authorizedClientService;
   private final RealEstateAgentRepository realEstateAgentRepository;
   private final RoleRepository roleRepository;
+  private final UserRepository userRepository;
 
   @Override
   public void onAuthenticationSuccess(
@@ -41,12 +43,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     String tokenValue;
     if (oauthToken.getPrincipal() instanceof OidcUser oidcUser) {
-      tokenValue = oidcUser.getIdToken().getTokenValue(); // ID Token (JWT)
+      tokenValue = oidcUser.getIdToken().getTokenValue();
     } else {
-      tokenValue = client.getAccessToken().getTokenValue(); // fallback: Access Token
+      tokenValue = client.getAccessToken().getTokenValue();
     }
 
-    if (!realEstateAgentRepository.existsByEmail(email)) {
+    if (!userRepository.existsByEmail(email)) {
       Role role =
           roleRepository
               .findByName("REAL_ESTATE_AGENT")

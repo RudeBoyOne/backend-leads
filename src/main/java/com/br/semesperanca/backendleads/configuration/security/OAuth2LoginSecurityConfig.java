@@ -5,11 +5,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -26,10 +30,13 @@ public class OAuth2LoginSecurityConfig {
   @Order(1)
   public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
     http.securityMatcher("/api/**", "/swagger-ui/**", "/v3/api-docs/**")
+        .cors(Customizer.withDefaults())
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers(HttpMethod.POST, "/api/auth/login")
+                auth.requestMatchers(HttpMethod.OPTIONS, "/api/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/auth/login")
                     .permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
                     .permitAll()
@@ -45,6 +52,18 @@ public class OAuth2LoginSecurityConfig {
                     .hasAnyRole("FULL_ADMIN", "ADMIN")
                     .requestMatchers(HttpMethod.PATCH, "/api/real-estate-agents/{id}/toggle-active")
                     .hasAnyRole("FULL_ADMIN", "ADMIN")
+                    .requestMatchers(HttpMethod.GET, "/api/managers")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/managers")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
+                    .requestMatchers(HttpMethod.GET, "/api/managers/{id}")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
+                    .requestMatchers(HttpMethod.PUT, "/api/managers/{id}")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
+                    .requestMatchers(HttpMethod.PATCH, "/api/managers/{id}/toggle-active")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
+                    .requestMatchers(HttpMethod.PATCH, "/api/auth/change-password")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN", "REAL_ESTATE_AGENT", "MANAGER")
                     .anyRequest()
                     .authenticated())
         .oauth2ResourceServer(
@@ -63,10 +82,23 @@ public class OAuth2LoginSecurityConfig {
   @Bean
   @Order(2)
   public SecurityFilterChain oauth2FilterChain(HttpSecurity http) throws Exception {
-    http.authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+    http.cors(Customizer.withDefaults())
+        .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
         .oauth2Login(oauth -> oauth.successHandler(oAuth2SuccessHandler));
 
     return http.build();
+  }
+
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowCredentials(true);
+    configuration.addAllowedHeader("*");
+    configuration.addAllowedMethod("*");
+    configuration.addAllowedOriginPattern("*");
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
   }
 
   @Bean
