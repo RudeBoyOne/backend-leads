@@ -1,4 +1,3 @@
--- Imobiliária padrão do sistema
 INSERT INTO real_estate_agency (id, name, cnpj, email, phone, active)
 VALUES (
     gen_random_uuid(),
