@@ -39,7 +39,9 @@ CREATE TABLE role (
 );
 
 INSERT INTO role (name) VALUES
-    ('admin'),
-    ('manager'),
-    ('real_estate_agent'),
-    ('viewer');
+    ('FULL_ADMIN'),
+    ('ADMIN'),
+    ('MANAGER'),
+    ('REAL_ESTATE_AGENT'),
+    ('TEAM_AGENT'),
+    ('USER');
