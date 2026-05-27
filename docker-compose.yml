@@ -32,3 +32,8 @@ services:
 
 volumes:
   pgdata:
+
+networks:
+  default:
+    name: lead-network
+    external: true
