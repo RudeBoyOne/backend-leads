@@ -1,11 +1,13 @@
 package com.br.semesperanca.backendleads.domain.service.security;
 
+import com.br.semesperanca.backendleads.application.model.request.ChangePasswordRequest;
 import com.br.semesperanca.backendleads.application.model.request.CreateFullAdminRequest;
 import com.br.semesperanca.backendleads.application.model.request.LoginRequest;
 import com.br.semesperanca.backendleads.application.model.response.LoginResponse;
 import com.br.semesperanca.backendleads.application.model.response.RealEstateAgentResponse;
 import com.br.semesperanca.backendleads.domain.model.Role;
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent;
+import com.br.semesperanca.backendleads.domain.model.user.User;
 import com.br.semesperanca.backendleads.domain.repository.RoleRepository;
 import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository;
 import com.br.semesperanca.backendleads.domain.repository.user.UserRepository;
@@ -79,5 +81,24 @@ public class AuthService {
         agent.getRole().getName(),
         agent.isActive(),
         agent.getCreatedAt());
+  }
+
+  @Transactional
+  public void changePassword(ChangePasswordRequest request, String email) {
+    if (!request.newPassword().equals(request.confirmPassword())) {
+      throw new RuntimeException("Nova senha e confirmação não coincidem");
+    }
+
+    User user =
+        userRepository
+            .findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+    if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+      throw new RuntimeException("Senha atual inválida");
+    }
+
+    user.setPassword(passwordEncoder.encode(request.newPassword()));
+    userRepository.save(user);
   }
 }
