@@ -62,6 +62,11 @@ public class OAuth2LoginSecurityConfig {
                     .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
                     .requestMatchers(HttpMethod.PATCH, "/api/managers/{id}/toggle-active")
                     .hasAnyRole("FULL_ADMIN", "ADMIN")
+                    .requestMatchers(
+                        HttpMethod.PATCH, "/api/real-estate-agents/{id}/reset-password")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
+                    .requestMatchers(HttpMethod.PATCH, "/api/managers/{id}/reset-password")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
                     .requestMatchers(HttpMethod.PATCH, "/api/auth/change-password")
                     .hasAnyRole("FULL_ADMIN", "ADMIN", "REAL_ESTATE_AGENT", "MANAGER")
                     .anyRequest()

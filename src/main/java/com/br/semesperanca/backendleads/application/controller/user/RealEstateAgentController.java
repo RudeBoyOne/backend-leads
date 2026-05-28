@@ -1,8 +1,10 @@
 package com.br.semesperanca.backendleads.application.controller.user;
 
 import com.br.semesperanca.backendleads.application.model.request.CreateRealEstateAgentRequest;
+import com.br.semesperanca.backendleads.application.model.request.ResetPasswordRequest;
 import com.br.semesperanca.backendleads.application.model.request.UpdateRealEstateAgentRequest;
 import com.br.semesperanca.backendleads.application.model.response.RealEstateAgentResponse;
+import com.br.semesperanca.backendleads.domain.service.security.AuthService;
 import com.br.semesperanca.backendleads.domain.service.user.RealEstateAgentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class RealEstateAgentController {
 
   private final RealEstateAgentService service;
+  private final AuthService authService;
 
   @GetMapping
   @Operation(summary = "Listar corretores", description = "Requer FULL_ADMIN ou ADMIN")
@@ -56,5 +59,13 @@ public class RealEstateAgentController {
   @Operation(summary = "Ativar/Desativar corretor", description = "Requer FULL_ADMIN ou ADMIN")
   public ResponseEntity<RealEstateAgentResponse> toggleActive(@PathVariable UUID id) {
     return ResponseEntity.ok(service.toggleActive(id));
+  }
+
+  @PatchMapping("/{id}/reset-password")
+  @Operation(summary = "Resetar senha do corretor", description = "Requer FULL_ADMIN ou ADMIN")
+  public ResponseEntity<Void> resetPassword(
+      @PathVariable UUID id, @RequestBody @Valid ResetPasswordRequest request) {
+    authService.resetPassword(id, request);
+    return ResponseEntity.noContent().build();
   }
 }
