@@ -2,15 +2,22 @@ package com.br.semesperanca.backendleads.domain.service.user;
 
 import com.br.semesperanca.backendleads.application.model.request.CreateRealEstateAgentRequest;
 import com.br.semesperanca.backendleads.application.model.request.UpdateRealEstateAgentRequest;
+import com.br.semesperanca.backendleads.application.model.request.UserFilterRequest;
 import com.br.semesperanca.backendleads.application.model.response.RealEstateAgentResponse;
+import com.br.semesperanca.backendleads.configuration.exception.EmailAlreadyExistsException;
 import com.br.semesperanca.backendleads.domain.model.Role;
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent;
 import com.br.semesperanca.backendleads.domain.repository.RoleRepository;
 import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository;
 import com.br.semesperanca.backendleads.domain.repository.user.UserRepository;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +34,7 @@ public class RealEstateAgentService {
   @Transactional
   public RealEstateAgentResponse create(CreateRealEstateAgentRequest request) {
     if (userRepository.existsByEmail(request.email())) {
-      throw new RuntimeException("Email já cadastrado");
+      throw new EmailAlreadyExistsException(request.email());
     }
 
     if (repository.existsByCreci(request.creci())) {
@@ -54,10 +61,6 @@ public class RealEstateAgentService {
 
   public RealEstateAgentResponse findById(UUID id) {
     return toResponse(findAgentById(id));
-  }
-
-  public List<RealEstateAgentResponse> findAll() {
-    return repository.findAll().stream().map(this::toResponse).toList();
   }
 
   @Transactional
@@ -93,5 +96,29 @@ public class RealEstateAgentService {
         agent.getRole().getName(),
         agent.isActive(),
         agent.getCreatedAt());
+  }
+
+  public Page<RealEstateAgentResponse> findAll(UserFilterRequest filter, Pageable pageable) {
+    return repository.findAll(buildSpec(filter), pageable).map(this::toResponse);
+  }
+
+  private Specification<RealEstateAgent> buildSpec(UserFilterRequest filter) {
+    return (root, query, cb) -> {
+      List<Predicate> predicates = new ArrayList<>();
+
+      if (filter.active() != null) {
+        predicates.add(cb.equal(root.get("active"), filter.active()));
+      }
+
+      if (filter.search() != null && !filter.search().isBlank()) {
+        String pattern = "%" + filter.search().toLowerCase() + "%";
+        predicates.add(
+            cb.or(
+                cb.like(cb.lower(root.get("name")), pattern),
+                cb.like(cb.lower(root.get("email")), pattern)));
+      }
+
+      return cb.and(predicates.toArray(new Predicate[0]));
+    };
   }
 }
