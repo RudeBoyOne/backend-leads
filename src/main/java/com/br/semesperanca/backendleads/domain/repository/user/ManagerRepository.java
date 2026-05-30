@@ -4,9 +4,11 @@ import com.br.semesperanca.backendleads.domain.model.user.Manager;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ManagerRepository extends JpaRepository<Manager, UUID> {
+public interface ManagerRepository
+    extends JpaRepository<Manager, UUID>, JpaSpecificationExecutor<Manager> {
   Optional<Manager> findByEmail(String email);
 }

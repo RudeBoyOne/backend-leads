@@ -69,4 +69,10 @@ public class GlobalExceptionHandler {
                 "error", status.getReasonPhrase(),
                 "message", message));
   }
+
+  @ExceptionHandler(EmailAlreadyExistsException.class)
+  public ResponseEntity<Map<String, Object>> handleEmailAlreadyExists(
+      EmailAlreadyExistsException ex) {
+    return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+  }
 }

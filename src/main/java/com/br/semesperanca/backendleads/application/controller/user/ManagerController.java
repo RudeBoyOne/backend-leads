@@ -1,15 +1,20 @@
 package com.br.semesperanca.backendleads.application.controller.user;
 
 import com.br.semesperanca.backendleads.application.model.request.CreateManagerRequest;
+import com.br.semesperanca.backendleads.application.model.request.ResetPasswordRequest;
 import com.br.semesperanca.backendleads.application.model.request.UpdateManagerRequest;
+import com.br.semesperanca.backendleads.application.model.request.UserFilterRequest;
 import com.br.semesperanca.backendleads.application.model.response.ManagerResponse;
+import com.br.semesperanca.backendleads.domain.service.security.AuthService;
 import com.br.semesperanca.backendleads.domain.service.user.ManagerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,11 +26,19 @@ import org.springframework.web.bind.annotation.*;
 public class ManagerController {
 
   private final ManagerService service;
+  private final AuthService authService;
 
   @GetMapping
   @Operation(summary = "Listar gerentes", description = "Requer FULL_ADMIN ou ADMIN")
-  public ResponseEntity<List<ManagerResponse>> findAll() {
-    return ResponseEntity.ok(service.findAll());
+  public ResponseEntity<Page<ManagerResponse>> findAll(
+      @RequestParam(required = false) Boolean active,
+      @RequestParam(required = false) String search,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+
+    Pageable pageable = PageRequest.of(page, size);
+    UserFilterRequest filter = new UserFilterRequest(active, search);
+    return ResponseEntity.ok(service.findAll(filter, pageable));
   }
 
   @PostMapping
@@ -51,5 +64,13 @@ public class ManagerController {
   @Operation(summary = "Ativar/Desativar gerente", description = "Requer FULL_ADMIN ou ADMIN")
   public ResponseEntity<ManagerResponse> toggleActive(@PathVariable UUID id) {
     return ResponseEntity.ok(service.toggleActive(id));
+  }
+
+  @PatchMapping("/{id}/reset-password")
+  @Operation(summary = "Resetar senha do gerente", description = "Requer FULL_ADMIN ou ADMIN")
+  public ResponseEntity<Void> resetPassword(
+      @PathVariable UUID id, @RequestBody @Valid ResetPasswordRequest request) {
+    authService.resetPassword(id, request);
+    return ResponseEntity.noContent().build();
   }
 }

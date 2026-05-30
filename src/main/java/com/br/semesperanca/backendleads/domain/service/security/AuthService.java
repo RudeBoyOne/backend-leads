@@ -3,6 +3,7 @@ package com.br.semesperanca.backendleads.domain.service.security;
 import com.br.semesperanca.backendleads.application.model.request.ChangePasswordRequest;
 import com.br.semesperanca.backendleads.application.model.request.CreateFullAdminRequest;
 import com.br.semesperanca.backendleads.application.model.request.LoginRequest;
+import com.br.semesperanca.backendleads.application.model.request.ResetPasswordRequest;
 import com.br.semesperanca.backendleads.application.model.response.LoginResponse;
 import com.br.semesperanca.backendleads.application.model.response.RealEstateAgentResponse;
 import com.br.semesperanca.backendleads.domain.model.Role;
@@ -28,21 +29,21 @@ public class AuthService {
   private final UserRepository userRepository;
 
   public LoginResponse login(LoginRequest request) {
-    RealEstateAgent agent =
-        repository
+    User user =
+        userRepository
             .findByEmail(request.email())
             .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-    if (!agent.isActive()) {
+    if (!user.isActive()) {
       throw new RuntimeException("Usuário inativo");
     }
 
-    if (!passwordEncoder.matches(request.password(), agent.getPassword())) {
+    if (!passwordEncoder.matches(request.password(), user.getPassword())) {
       throw new RuntimeException("Senha inválida");
     }
 
     String token =
-        jwtService.generateToken(agent.getId(), agent.getEmail(), agent.getRole().getName());
+        jwtService.generateToken(user.getId(), user.getEmail(), user.getRole().getName());
 
     return new LoginResponse(token);
   }
@@ -97,6 +98,21 @@ public class AuthService {
     if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
       throw new RuntimeException("Senha atual inválida");
     }
+
+    user.setPassword(passwordEncoder.encode(request.newPassword()));
+    userRepository.save(user);
+  }
+
+  @Transactional
+  public void resetPassword(UUID userId, ResetPasswordRequest request) {
+    if (!request.newPassword().equals(request.confirmPassword())) {
+      throw new RuntimeException("Nova senha e confirmação não coincidem");
+    }
+
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
     user.setPassword(passwordEncoder.encode(request.newPassword()));
     userRepository.save(user);
