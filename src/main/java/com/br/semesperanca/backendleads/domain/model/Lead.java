@@ -50,6 +50,8 @@ public class Lead {
 
   private String status;
 
+  private String insightId;
+
   private Instant timestamp;
 
   private Instant createdAt;

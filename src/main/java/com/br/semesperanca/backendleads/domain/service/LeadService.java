@@ -18,9 +18,11 @@ public class LeadService {
   private final LeadRepository leadRepository;
   private final EmailService emailService;
   private final MailProperties mailProperties;
+  private final InsightClient insightClient;
 
   public void receiveLead(LeadReceivedNotificationDTO receivedNotificationDTO) {
     emailService.sendLeadReceived(receivedNotificationDTO, mailProperties.getNotifyTo());
+    insightClient.createInsight(receivedNotificationDTO.originLeadId());
   }
 
   public Page<Lead> findLeads(

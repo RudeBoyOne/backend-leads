@@ -10,6 +10,7 @@
 - OpenAPI/Swagger via SpringDoc 2.8.9 (`/swagger-ui.html`, `/v3/api-docs`)
 - Spring Boot Actuator (`/actuator/health`, `/actuator/info`, `/actuator/metrics`)
 - Spring Validation (`jakarta.validation`)
+- HTTP client via `RestClient` (Spring Web), async via `@EnableAsync` + `ThreadPoolTaskExecutor`
 - Spotless/Google Java Format — **applied on `compile` phase** (`spotless:apply` goal bound to `compile`)
 - Docker multi-stage build (`maven:3.9.11-eclipse-temurin-21` → `eclipse-temurin:21-jre`)
 - No CI/CD workflows in repo
@@ -61,6 +62,8 @@ com.br.semesperanca.backendleads
 │   └── model/
 │       ├── LeadDTO.java                # record for lead response/creation
 │       ├── LeadReceivedNotificationDTO # record for incoming lead notification
+│       ├── InsightRequest.java         # record for insight API request body (snake_case)
+│       ├── InsightResponse.java        # record for insight API response
 │       ├── request/                    # LoginRequest, CreateFullAdminRequest, CreateManagerRequest,
 │       │                               # CreateRealEstateAgentRequest, UpdateManagerRequest,
 │       │                               # UpdateRealEstateAgentRequest, ChangePasswordRequest
@@ -81,8 +84,9 @@ com.br.semesperanca.backendleads
 │   │       ├── ManagerRepository.java
 │   │       └── RealEstateAgentRepository.java
 │   └── service/
-│       ├── LeadService.java           # receive (email only, no persist), search (Specifications), getById
+│       ├── LeadService.java           # receive (email + insight), search (Specifications), getById
 │       ├── EmailService.java          # HTML email via template
+│       ├── InsightClient.java         # HTTP client for insight API (@Async)
 │       ├── security/
 │       │   ├── AuthService.java       # login, createFullAdmin, changePassword
 │       │   └── JwtService.java        # JWT generation/validation
@@ -93,6 +97,7 @@ com.br.semesperanca.backendleads
 │   ├── MailProperties.java            # @ConfigurationProperties(prefix = "app.mail")
 │   ├── MailConfiguration.java         # enables MailProperties
 │   ├── SwaggerConfig.java             # OpenAPI bean with Bearer JWT security scheme
+│   ├── AsyncConfiguration.java        # @EnableAsync + ThreadPoolTaskExecutor
 │   ├── exception/
 │   │   └── GlobalExceptionHandler.java # @RestControllerAdvice (Runtime, AccessDenied, Auth, Validation, 500)
 │   └── security/
@@ -136,9 +141,9 @@ com.br.semesperanca.backendleads
 ### Leads (`/leads`)
 | Method | Path | Role | Description |
 |---|---|---|---|
-| `POST` | `/leads/receive` | Authenticated | Receive lead notification (email only, **not** persisted) |
+| `POST` | `/leads/receive` | Authenticated | Receive lead notification (email + async insight API call) |
 | `GET` | `/leads/search` | Authenticated | Filters: `status`, `corretorId`, `origin`, `search` (name/email LIKE). Pagination via Spring's `Pageable` |
-| `GET` | `/leads/search/{id}` | Authenticated | Returns `LeadDTO` by UUID |
+| `GET` | `/leads/search/{id}` | Authenticated | Returns `LeadDTO` by UUID (includes `insightId`) |
 
 ### OAuth2
 | Method | Path | Description |
@@ -165,7 +170,7 @@ com.br.semesperanca.backendleads
 | `V001__create_table_role.sql` | `role`, `plan`, `real_estate_agency`, `subscription` + seeds roles |
 | `V002__create_table_real_estate_agency.sql` | `"users"`, `real_estate_agent`, `manager`, `team`, `team_agent` |
 | `V003__create_table_portal.sql` | `portal`, `funnel_stage` |
-| `V004__create_table_leads.sql` | `lead` (status: new/in_progress/converted/lost/archived) |
+| `V004__create_table_leads.sql` | `lead` (status: new/in_progress/converted/lost/archived, insight_id) |
 | `V005__create_table_lead_interaction.sql` | `lead_interaction` |
 | `V006__create_triggers.sql` | `set_updated_at()` function + triggers |
 | `V007__seed_system_agency_and_admins.sql` | Seeds "Sistema" agency + two FULL_ADMIN users |
@@ -179,6 +184,7 @@ com.br.semesperanca.backendleads
 - Flyway migrations are plain SQL in `src/main/resources/db/migration/`
 - Application properties in `application.yml` use env var placeholders (`${DB_URL}`, etc.)
 - Security: two `SecurityFilterChain` beans — API (`/api/**`, `/swagger-ui/**`, `/v3/api-docs/**`) and OAuth2 login fallback
+- External HTTP calls via `RestClient` (built from auto-configured `RestClient.Builder`); async operations via `@Async` with dedicated `ThreadPoolTaskExecutor`
 
 ## Testing notes
 

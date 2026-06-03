@@ -27,6 +27,7 @@ public record LeadDTO(
     UUID funnelStageId,
     String source,
     @NotBlank(message = "Status is required") String status,
+    String insightId,
     String createdAt,
     String updatedAt) {
 
@@ -49,6 +50,7 @@ public record LeadDTO(
         lead.getFunnelStageId(),
         lead.getSource(),
         lead.getStatus(),
+        lead.getInsightId(),
         lead.getCreatedAt() != null ? lead.getCreatedAt().toString() : null,
         lead.getUpdatedAt() != null ? lead.getUpdatedAt().toString() : null);
   }

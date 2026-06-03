@@ -55,6 +55,8 @@ app:
   mail:
     from: no-reply@lucasfncode.com.br
     notify-to: dev@lucasfncode.com.br
+  insight:
+    url: http://insights_app:8000
   jwt:
     secret: ${JWT_SECRET}
     expiration: 86400000

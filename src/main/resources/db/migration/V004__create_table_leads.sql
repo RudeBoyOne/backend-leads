@@ -15,6 +15,7 @@ CREATE TABLE lead (
     temperature           VARCHAR(20),
     transaction_type      VARCHAR(50),
     source                VARCHAR(100),
+    insight_id            VARCHAR(255),
     status                VARCHAR(30) NOT NULL DEFAULT 'new'
                           CHECK (status IN ('new', 'in_progress', 'converted', 'lost', 'archived')),
     timestamp             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
