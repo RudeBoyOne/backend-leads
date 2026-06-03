@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16.10
-    container_name: postgres_backend_leads
+    container_name: postgres-backend-leads
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
