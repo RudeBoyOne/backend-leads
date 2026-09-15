@@ -87,6 +87,12 @@ class ManagerService(
         return toResponse(repository.save(manager))
     }
 
+    @Transactional
+    fun delete(id: UUID) {
+        val manager = findManagerById(id)
+        repository.delete(manager)
+    }
+
     private fun findManagerById(id: UUID): Manager {
         return repository.findById(id).orElseThrow { RuntimeException("Gerente não encontrado") }
     }

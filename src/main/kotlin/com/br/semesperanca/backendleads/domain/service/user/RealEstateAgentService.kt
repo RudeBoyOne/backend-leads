@@ -67,6 +67,12 @@ class RealEstateAgentService(
         return toResponse(repository.save(agent))
     }
 
+    @Transactional
+    fun delete(id: UUID) {
+        val agent = findAgentById(id)
+        repository.delete(agent)
+    }
+
     private fun findAgentById(id: UUID): RealEstateAgent {
         return repository.findById(id).orElseThrow { RuntimeException("Corretor não encontrado") }
     }

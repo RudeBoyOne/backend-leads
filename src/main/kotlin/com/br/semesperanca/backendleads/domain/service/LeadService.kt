@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Service
@@ -63,5 +64,12 @@ class LeadService(
             leadRepository.findById(id)
                 .orElseThrow { IllegalArgumentException("this id dont exist") }
         )
+    }
+
+    @Transactional
+    fun delete(id: UUID) {
+        val lead = leadRepository.findById(id)
+            .orElseThrow { RuntimeException("Lead não encontrado") }
+        leadRepository.delete(lead)
     }
 }

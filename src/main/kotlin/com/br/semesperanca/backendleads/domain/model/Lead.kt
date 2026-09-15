@@ -50,4 +50,7 @@ open class Lead(
     var createdAt: Instant? = null,
 
     var updatedAt: Instant? = null
-)
+) {
+    @OneToMany(mappedBy = "lead", fetch = FetchType.LAZY)
+    var activities: MutableList<Activity> = mutableListOf()
+}
