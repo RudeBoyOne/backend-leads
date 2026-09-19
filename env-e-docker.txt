@@ -42,6 +42,9 @@ NOTA:
     MAIL_FROM=no-reply@lucasfncode.com.br
     INSIGHT_URL=http://insights_app:8000
     JWT_EXPIRATION=86400000
+- Opcionais (default em application.yml, podem ser sobrescritos por env):
+    JWT_ISSUER=http://backend-leads.local     (iss claim dos tokens locais; usado no decoder/routing)
+    FRONTEND_URL=http://localhost:3000        (redirect apos login Google)
 
 --------------------------------------------------------------------------------
 EXEMPLO DE ARQUIVO .env (na raiz do projeto, gitignored)
@@ -57,6 +60,9 @@ JWT_SECRET=Q2kz/249NiMd3umUd7p8t9wCaAgmg/y6fO1ZNoycDSvfUbRiNRU8S1BxUhWIGJvX
 GOOGLE_CLIENT_ID=197186840874-0kg5cqo250rq1j7l7givmps94dt0hidu.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=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
 OAUTH2_ISSUER_URI=https://accounts.google.com
+# Opcionais:
+# JWT_ISSUER=http://backend-leads.local
+# FRONTEND_URL=http://localhost:3000
 
 --------------------------------------------------------------------------------
 RODAR A APLICACAO LOCALMENTE (sem Docker)

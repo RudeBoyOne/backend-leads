@@ -33,6 +33,8 @@
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth2 credentials |
 | `OAUTH2_ISSUER_URI` | OAuth2 issuer URI (e.g., `https://accounts.google.com`) |
 
+Optional (defaults in `application.yml`): `JWT_ISSUER` (iss claim of local tokens, default `http://backend-leads.local`), `FRONTEND_URL` (OAuth2 success redirect, default `http://localhost:3000`).
+
 Env vars are loaded from `.env` (gitignored).
 For local dev without Docker, run `./mvnw spring-boot:run`.
 
@@ -101,12 +103,12 @@ com.br.semesperanca.backendleads
 │   ├── exception/
 │   │   └── GlobalExceptionHandler.java # @RestControllerAdvice (Runtime, AccessDenied, Auth, Validation, 500)
 │   └── security/
-│       ├── OAuth2LoginSecurityConfig.java     # two SecurityFilterChain beans (API + OAuth2 login), CORS, BCrypt
-│       ├── CustomJwtDecoder.java              # local JWT → Google JWKS fallback
-│       ├── CustomJwtAuthenticationConverter.java # role extraction (Google → REAL_ESTATE_AGENT)
+│       ├── OAuth2LoginSecurityConfig.kt      # 2 chains: OAuth2 login (estreita) + API catch-all, CORS, BCrypt
+│       ├── CustomJwtDecoder.kt               # delegating JwtDecoder por claim iss (local HMAC + Google JWKS), valida iss/aud
+│       ├── CustomJwtAuthenticationConverter.kt # issuer-aware: local → claim role; Google → role do banco (UserRepository)
 │       ├── CustomAuthenticationEntryPoint.java # JSON 401
 │       ├── CustomAccessDeniedHandler.java     # JSON 403
-│       └── OAuth2SuccessHandler.java          # auto-create user from Google, redirect to frontend
+│       └── OAuth2SuccessHandler.kt          # auto-cria usuário Google (email_verified), repassa ID token, redirect via app.frontend-url
 └── logging/
     └── LoggingFilter.java            # Filter (MDC ip/user-agent)
 ```
@@ -148,7 +150,7 @@ com.br.semesperanca.backendleads
 ### OAuth2
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/login/oauth2/code/google` | Google callback — auto-creates user, redirects to `http://localhost:3000/auth/callback?token=...` |
+| `GET` | `/login/oauth2/code/google` | Google callback — auto-creates user (if `email_verified`), redirects to `{app.frontend-url}/auth/callback?token=<id_token>` |
 
 ### Actuator
 | Path | Description |
@@ -183,7 +185,7 @@ com.br.semesperanca.backendleads
 - JPA inheritance: `User` is abstract with `InheritanceType.JOINED`, extended by `Manager` and `RealEstateAgent`
 - Flyway migrations are plain SQL in `src/main/resources/db/migration/`
 - Application properties in `application.yml` use env var placeholders (`${DB_URL}`, etc.)
-- Security: two `SecurityFilterChain` beans — API (`/api/**`, `/leads/**`, `/swagger-ui/**`, `/v3/api-docs/**`) and OAuth2 login fallback
+- Security: two `SecurityFilterChain` beans — `oauth2FilterChain` `@Order(1)` (matcher `/oauth2/**`, `/login/**`, `/error`) e `apiFilterChain` `@Order(2)` **catch-all** (sem matcher: toda rota é protegida por JWT automaticamente). Decoder híbrido por claim `iss` (local HS256 + Google JWKS) com validação de `iss`/`aud`; converter issuer-aware (Google resolve role no banco via `UserRepository`)
 - External HTTP calls via `RestClient` (built from auto-configured `RestClient.Builder`); async operations via `@Async` with dedicated `ThreadPoolTaskExecutor`
 
 ## Testing notes

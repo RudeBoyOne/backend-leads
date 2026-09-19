@@ -16,16 +16,20 @@ class JwtService(
     private val secret: String,
 
     @Value("\${app.jwt.expiration}")
-    private val expiration: Long
+    private val expiration: Long,
+
+    @Value("\${app.jwt.issuer}")
+    private val issuer: String
 ) {
     fun generateToken(id: UUID, email: String?, role: String?): String {
         return Jwts.builder()
+            .issuer(issuer)
             .subject(id.toString())
             .claim("role", role)
             .claim("email", email)
             .issuedAt(Date())
             .expiration(Date(System.currentTimeMillis() + expiration))
-            .signWith(getSecretKey())
+            .signWith(getSecretKey(), Jwts.SIG.HS256)
             .compact()
     }
 

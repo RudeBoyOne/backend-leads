@@ -24,17 +24,36 @@ class OAuth2LoginSecurityConfig(
     private val customAccessDeniedHandler: CustomAccessDeniedHandler
 ) {
 
+    /**
+     * Chain do fluxo OAuth2 (browser): apenas os endpoints do login social.
+     * Matcher estreito — nao participa da protecao das rotas da aplicacao.
+     */
     @Bean
     @Order(1)
     @Throws(Exception::class)
+    fun oauth2FilterChain(http: HttpSecurity): SecurityFilterChain {
+        http.securityMatcher("/oauth2/**", "/login/**", "/error")
+            .authorizeHttpRequests { auth -> auth.anyRequest().permitAll() }
+            .oauth2Login { oauth -> oauth.successHandler(oAuth2SuccessHandler) }
+
+        return http.build()
+    }
+
+    /**
+     * Chain da API: catch-all (sem securityMatcher) — toda rota nova
+     * ja nasce protegida por JWT, sem manutencao por rota.
+     */
+    @Bean
+    @Order(2)
+    @Throws(Exception::class)
     fun apiFilterChain(http: HttpSecurity): SecurityFilterChain {
-        http.securityMatcher("/api/**", "/leads/**", "/swagger-ui/**", "/v3/api-docs/**")
-            .cors(Customizer.withDefaults())
+        http.cors(Customizer.withDefaults())
             .csrf { csrf -> csrf.disable() }
             .authorizeHttpRequests { auth ->
-                auth.requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
+                auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                    .requestMatchers("/actuator/health/**").permitAll()
+                    .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/register/full-admin")
                     .hasAnyRole("FULL_ADMIN")
                     .requestMatchers(HttpMethod.GET, "/api/real-estate-agents")
@@ -78,17 +97,6 @@ class OAuth2LoginSecurityConfig(
                     .authenticationEntryPoint(customAuthenticationEntryPoint)
             }
             .exceptionHandling { ex -> ex.accessDeniedHandler(customAccessDeniedHandler) }
-
-        return http.build()
-    }
-
-    @Bean
-    @Order(2)
-    @Throws(Exception::class)
-    fun oauth2FilterChain(http: HttpSecurity): SecurityFilterChain {
-        http.cors(Customizer.withDefaults())
-            .authorizeHttpRequests { auth -> auth.anyRequest().authenticated() }
-            .oauth2Login { oauth -> oauth.successHandler(oAuth2SuccessHandler) }
 
         return http.build()
     }

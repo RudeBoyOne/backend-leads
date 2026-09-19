@@ -1,36 +1,48 @@
 package com.br.semesperanca.backendleads.configuration.security
 
+import com.br.semesperanca.backendleads.domain.repository.user.UserRepository
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.convert.converter.Converter
 import org.springframework.security.authentication.AbstractAuthenticationToken
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.stereotype.Component
 
 @Component
-class CustomJwtAuthenticationConverter : Converter<Jwt, AbstractAuthenticationToken> {
+class CustomJwtAuthenticationConverter(
+    @Value("\${app.jwt.issuer}")
+    private val appIssuer: String,
 
-    override fun convert(jwt: Jwt): AbstractAuthenticationToken {
-        val authorities = extractAuthorities(jwt)
-        return JwtAuthenticationToken(jwt, authorities)
+    private val userRepository: UserRepository
+) : Converter<Jwt, AbstractAuthenticationToken> {
+
+    override fun convert(jwt: Jwt): AbstractAuthenticationToken =
+        JwtAuthenticationToken(jwt, resolveAuthorities(jwt))
+
+    private fun resolveAuthorities(jwt: Jwt): List<SimpleGrantedAuthority> {
+        if (jwt.issuer?.toString() == appIssuer) {
+            val role = jwt.getClaimAsString("role")
+            return role?.let { listOf(SimpleGrantedAuthority("ROLE_$it")) } ?: emptyList()
+        }
+        return googleAuthorities(jwt)
     }
 
-    private fun extractAuthorities(jwt: Jwt): Collection<SimpleGrantedAuthority> {
-        val issuer = jwt.getClaimAsString("iss")
-        if (issuer != null && issuer.contains("accounts.google.com")) {
-            return listOf(SimpleGrantedAuthority("ROLE_REAL_ESTATE_AGENT"))
-        }
-
-        val role = jwt.getClaimAsString("role")
-        if (role != null) {
-            return listOf(SimpleGrantedAuthority("ROLE_$role"))
-        }
-
+    private fun googleAuthorities(jwt: Jwt): List<SimpleGrantedAuthority> {
         val email = jwt.getClaimAsString("email")
-        if (email != null) {
-            return listOf(SimpleGrantedAuthority("ROLE_USER"))
+        val emailVerified = jwt.getClaimAsBoolean("email_verified") ?: false
+
+        if (email != null && emailVerified) {
+            val user = userRepository.findByEmail(email).orElse(null)
+            if (user != null) {
+                if (!user.isActive) {
+                    throw BadCredentialsException("Usuario inativo")
+                }
+                user.role?.name?.let { return listOf(SimpleGrantedAuthority("ROLE_$it")) }
+            }
         }
 
-        return emptyList()
+        return listOf(SimpleGrantedAuthority("ROLE_REAL_ESTATE_AGENT"))
     }
 }

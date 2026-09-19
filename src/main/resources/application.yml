@@ -52,6 +52,7 @@ spring:
             user-name-attribute: sub
 
 app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
   mail:
     from: no-reply@lucasfncode.com.br
     notify-to: dev@lucasfncode.com.br
@@ -60,6 +61,7 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration: 86400000
+    issuer: ${JWT_ISSUER:http://backend-leads.local}
 
 management:
   endpoints:
