@@ -24,8 +24,8 @@ services:
     environment:
       DB_URL: ${DB_URL}
       DB_NAME: ${DB_NAME}
-      USER_NAME: ${DB_USER}
-      PASSWORD: ${DB_PASSWORD}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}

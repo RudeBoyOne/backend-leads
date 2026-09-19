@@ -27,7 +27,7 @@
 
 | Variable | Purpose |
 |---|---|
-| `DB_URL`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | PostgreSQL connection (app uses `USER_NAME` env var mapped from `DB_USER` in compose) |
+| `DB_URL`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | PostgreSQL connection (passed straight through to the app service in compose) |
 | `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP (hostinger, port 465) |
 | `JWT_SECRET` | HMAC-SHA256 key for local JWT signing |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth2 credentials |

@@ -2,3 +2,4 @@ target/
 .git/
 .mvn/wrapper/
 *.md
+.env
