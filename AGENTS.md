@@ -6,7 +6,7 @@
 - Flyway (migrations in `src/main/resources/db/migration/`)
 - Lombok (`@RequiredArgsConstructor`, `@Builder`, `@Getter/@Setter`)
 - Spring Security + OAuth2 Client / Resource Server (Google login + local JWT)
-- JWT via `jjwt` 0.12.3 (HMAC-SHA256 local, fallback to Google JWKS)
+- JWT: emissão/parsing local via `jjwt` 0.12.3 (HS256, claim `iss`); decodificação no resource server via Spring Security `NimbusJwtDecoder` com roteamento por `iss` (local HS256 + Google JWKS), validação de `iss`/`aud`
 - OpenAPI/Swagger via SpringDoc 2.8.9 (`/swagger-ui.html`, `/v3/api-docs`)
 - Spring Boot Actuator (`/actuator/health`, `/actuator/info`, `/actuator/metrics`)
 - Spring Validation (`jakarta.validation`)
@@ -55,63 +55,110 @@ For local dev without Docker, run `./mvnw spring-boot:run`.
 com.br.semesperanca.backendleads
 ├── application/
 │   ├── controller/
-│   │   ├── LeadController              # /leads/** (receive, search, getById)
+│   │   ├── LeadController              # /leads/** (receive, search, getById, delete)
 │   │   ├── security/
 │   │   │   └── AuthController          # /api/auth/** (login, register/full-admin, change-password)
 │   │   └── user/
 │   │       ├── ManagerController       # /api/managers/** (CRUD + toggle-active)
 │   │       └── RealEstateAgentController # /api/real-estate-agents/** (CRUD + toggle-active)
 │   └── model/
-│       ├── LeadDTO.java                # record for lead response/creation
+│       ├── LeadDTO.kt                # record for lead response/creation
 │       ├── LeadReceivedNotificationDTO # record for incoming lead notification
-│       ├── InsightRequest.java         # record for insight API request body (snake_case)
-│       ├── InsightResponse.java        # record for insight API response
+│       ├── InsightRequest.kt         # record for insight API request body (snake_case)
+│       ├── InsightResponse.kt        # record for insight API response
 │       ├── request/                    # LoginRequest, CreateFullAdminRequest, CreateManagerRequest,
 │       │                               # CreateRealEstateAgentRequest, UpdateManagerRequest,
 │       │                               # UpdateRealEstateAgentRequest, ChangePasswordRequest
 │       └── response/                   # LoginResponse, ManagerResponse, RealEstateAgentResponse
 ├── domain/
 │   ├── model/
-│   │   ├── Lead.java                  # JPA entity (lead table)
-│   │   ├── Role.java                  # JPA entity (role table)
+│   │   ├── Lead.kt                  # JPA entity (lead table)
+│   │   ├── Role.kt                  # JPA entity (role table)
 │   │   └── user/
-│   │       ├── User.java              # abstract JPA entity (users table, JOINED inheritance, UserDetails)
-│   │       ├── Manager.java           # extends User (adds branchOffice)
-│   │       └── RealEstateAgent.java   # extends User (adds creci)
+│   │       ├── User.kt              # abstract JPA entity (users table, JOINED inheritance, UserDetails)
+│   │       ├── Manager.kt           # extends User (adds branchOffice)
+│   │       └── RealEstateAgent.kt   # extends User (adds creci)
 │   ├── repository/
-│   │   ├── LeadRepository.java        # JpaSpecificationExecutor<Lead>
-│   │   ├── RoleRepository.java
+│   │   ├── LeadRepository.kt        # JpaSpecificationExecutor<Lead>
+│   │   ├── RoleRepository.kt
 │   │   └── user/
-│   │       ├── UserRepository.java
-│   │       ├── ManagerRepository.java
-│   │       └── RealEstateAgentRepository.java
+│   │       ├── UserRepository.kt
+│   │       ├── ManagerRepository.kt
+│   │       └── RealEstateAgentRepository.kt
 │   └── service/
-│       ├── LeadService.java           # receive (email + insight), search (Specifications), getById
-│       ├── EmailService.java          # HTML email via template
-│       ├── InsightClient.java         # HTTP client for insight API (@Async)
+│       ├── LeadService.kt           # receive (email + insight), search (Specifications), getById
+│       ├── EmailService.kt          # HTML email via template
+│       ├── InsightClient.kt         # HTTP client for insight API (@Async)
 │       ├── security/
-│       │   ├── AuthService.java       # login, createFullAdmin, changePassword
-│       │   └── JwtService.java        # JWT generation/validation
+│       │   ├── AuthService.kt       # login, createFullAdmin, changePassword
+│       │   └── JwtService.kt        # JWT generation/validation
 │       └── user/
-│           ├── ManagerService.java    # CRUD + toggleActive
-│           └── RealEstateAgentService.java # CRUD + toggleActive
+│           ├── ManagerService.kt    # CRUD + toggleActive
+│           └── RealEstateAgentService.kt # CRUD + toggleActive
 ├── configuration/
-│   ├── MailProperties.java            # @ConfigurationProperties(prefix = "app.mail")
-│   ├── MailConfiguration.java         # enables MailProperties
-│   ├── SwaggerConfig.java             # OpenAPI bean with Bearer JWT security scheme
-│   ├── AsyncConfiguration.java        # @EnableAsync + ThreadPoolTaskExecutor
+│   ├── MailProperties.kt            # @ConfigurationProperties(prefix = "app.mail")
+│   ├── MailConfiguration.kt         # enables MailProperties
+│   ├── SwaggerConfig.kt             # OpenAPI bean with Bearer JWT security scheme
+│   ├── AsyncConfiguration.kt        # @EnableAsync + ThreadPoolTaskExecutor
 │   ├── exception/
-│   │   └── GlobalExceptionHandler.java # @RestControllerAdvice (Runtime, AccessDenied, Auth, Validation, 500)
+│   │   └── GlobalExceptionHandler.kt # @RestControllerAdvice (Runtime, AccessDenied, Auth, Validation, 500)
 │   └── security/
 │       ├── OAuth2LoginSecurityConfig.kt      # 2 chains: OAuth2 login (estreita) + API catch-all, CORS, BCrypt
 │       ├── CustomJwtDecoder.kt               # delegating JwtDecoder por claim iss (local HMAC + Google JWKS), valida iss/aud
 │       ├── CustomJwtAuthenticationConverter.kt # issuer-aware: local → claim role; Google → role do banco (UserRepository)
-│       ├── CustomAuthenticationEntryPoint.java # JSON 401
-│       ├── CustomAccessDeniedHandler.java     # JSON 403
+│       ├── CustomAuthenticationEntryPoint.kt # JSON 401
+│       ├── CustomAccessDeniedHandler.kt     # JSON 403
 │       └── OAuth2SuccessHandler.kt          # auto-cria usuário Google (email_verified), repassa ID token, redirect via app.frontend-url
 └── logging/
-    └── LoggingFilter.java            # Filter (MDC ip/user-agent)
+    └── LoggingFilter.kt            # Filter (MDC ip/user-agent)
 ```
+
+## Autenticação e autorização (híbrida)
+
+Dois fluxos de autenticação convivem na aplicação: **OAuth2/OpenID Connect (Google)** para login de browser e **JWT local (HS256)** para login por e-mail/senha. A API aceita tokens de ambas as origens.
+
+### Filter chains (Spring Security)
+
+| Bean | Order | Matcher | Responsabilidade |
+|---|---|---|---|
+| `oauth2FilterChain` | 1 | `/oauth2/**`, `/login/**`, `/error` | Fluxo OAuth2 do browser (login page + callback Google) |
+| `apiFilterChain` | 2 | catch-all (sem matcher) | Proteção JWT de **todas** as demais rotas — rota nova não exige configuração |
+
+- `apiFilterChain` é catch-all: qualquer rota fora da chain 1 cai aqui e é protegida por JWT automaticamente.
+- Públicas (permitAll): `OPTIONS /**`, `POST /api/auth/login`, `/swagger-ui.html`, `/swagger-ui/**`, `/v3/api-docs/**`, `/actuator/health/**`, `/error`.
+- Não autenticado → `401` JSON (`CustomAuthenticationEntryPoint`); sem permissão de role → `403` JSON (`CustomAccessDeniedHandler`).
+
+### Emissão de tokens
+
+- Token local (`JwtService`): claims `iss = app.jwt.issuer`, `sub = userId`, `role` e `email`, `iat`/`exp`; assinado **HS256** (`Jwts.SIG.HS256`) com `JWT_SECRET`.
+- Login Google: `OAuth2SuccessHandler` repassa o **ID token do Google** ao frontend (`{app.frontend-url}/auth/callback?token=<id_token>`); esse mesmo token é aceito pela API.
+
+### Decodificação por issuer (`CustomJwtDecoder`)
+
+O decoder lê o claim `iss` do token (sem verificar assinatura) e roteia para o decoder correto. Issuer desconhecido ou token malformado → `BadJwtException` → `401`.
+
+| `iss` | Decoder | Validações |
+|---|---|---|
+| `app.jwt.issuer` (ex.: `http://backend-leads.local`) | `NimbusJwtDecoder.withSecretKey(JWT_SECRET)`, HS256 | `JwtValidators.createDefaultWithIssuer(app.jwt.issuer)` (iss + exp) |
+| `OAUTH2_ISSUER_URI` (ex.: `https://accounts.google.com`) | `NimbusJwtDecoder.withJwkSetUri(...)` — JWKS carregado de forma **lazy** (sem rede no boot) | `createDefaultWithIssuer(OAUTH2_ISSUER_URI)` + `aud` deve conter `GOOGLE_CLIENT_ID` |
+
+### Autorização por token (`CustomJwtAuthenticationConverter`)
+
+- Token local (`iss` = app): autoridade `ROLE_<claim role>` (a role veio do banco na emissão).
+- Token Google: a role é resolvida **no banco** via `UserRepository.findByEmail`, exigindo `email_verified`:
+
+| Situação | Autoridade |
+|---|---|
+| Usuário encontrado e ativo | `ROLE_<role>` real do banco (`role`/`"users"`) |
+| Usuário inativo | `401` (`BadCredentialsException`) |
+| Usuário inexistente ou e-mail não verificado | `ROLE_REAL_ESTATE_AGENT` (regra do auto-create via Google) |
+
+### Fluxo OAuth2 (browser)
+
+1. Browser acessa `/oauth2/authorization/google`.
+2. Callback `GET /login/oauth2/code/google`.
+3. `OAuth2SuccessHandler`: se o e-mail não existe e `email_verified == true`, cria `RealEstateAgent` com role `REAL_ESTATE_AGENT`.
+4. Redireciona para `{app.frontend-url}/auth/callback?token=<id_token>`.
 
 ## API
 
@@ -146,6 +193,7 @@ com.br.semesperanca.backendleads
 | `POST` | `/leads/receive` | Authenticated | Receive lead notification (email + async insight API call) |
 | `GET` | `/leads/search` | Authenticated | Filters: `status`, `corretorId`, `origin`, `search` (name/email LIKE). Pagination via Spring's `Pageable` |
 | `GET` | `/leads/search/{id}` | Authenticated | Returns `LeadDTO` by UUID (includes `insightId`) |
+| `DELETE` | `/leads/{id}` | Authenticated | Delete lead by UUID |
 
 ### OAuth2
 | Method | Path | Description |
@@ -185,7 +233,7 @@ com.br.semesperanca.backendleads
 - JPA inheritance: `User` is abstract with `InheritanceType.JOINED`, extended by `Manager` and `RealEstateAgent`
 - Flyway migrations are plain SQL in `src/main/resources/db/migration/`
 - Application properties in `application.yml` use env var placeholders (`${DB_URL}`, etc.)
-- Security: two `SecurityFilterChain` beans — `oauth2FilterChain` `@Order(1)` (matcher `/oauth2/**`, `/login/**`, `/error`) e `apiFilterChain` `@Order(2)` **catch-all** (sem matcher: toda rota é protegida por JWT automaticamente). Decoder híbrido por claim `iss` (local HS256 + Google JWKS) com validação de `iss`/`aud`; converter issuer-aware (Google resolve role no banco via `UserRepository`)
+- Security: two `SecurityFilterChain` beans (`oauth2FilterChain` estreita + `apiFilterChain` catch-all) — ver seção «Autenticação e autorização (híbrida)»
 - External HTTP calls via `RestClient` (built from auto-configured `RestClient.Builder`); async operations via `@Async` with dedicated `ThreadPoolTaskExecutor`
 
 ## Testing notes
