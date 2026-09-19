@@ -28,7 +28,7 @@ class OAuth2LoginSecurityConfig(
     @Order(1)
     @Throws(Exception::class)
     fun apiFilterChain(http: HttpSecurity): SecurityFilterChain {
-        http.securityMatcher("/api/**", "/swagger-ui/**", "/v3/api-docs/**")
+        http.securityMatcher("/api/**", "/leads/**", "/swagger-ui/**", "/v3/api-docs/**")
             .cors(Customizer.withDefaults())
             .csrf { csrf -> csrf.disable() }
             .authorizeHttpRequests { auth ->

@@ -183,7 +183,7 @@ com.br.semesperanca.backendleads
 - JPA inheritance: `User` is abstract with `InheritanceType.JOINED`, extended by `Manager` and `RealEstateAgent`
 - Flyway migrations are plain SQL in `src/main/resources/db/migration/`
 - Application properties in `application.yml` use env var placeholders (`${DB_URL}`, etc.)
-- Security: two `SecurityFilterChain` beans — API (`/api/**`, `/swagger-ui/**`, `/v3/api-docs/**`) and OAuth2 login fallback
+- Security: two `SecurityFilterChain` beans — API (`/api/**`, `/leads/**`, `/swagger-ui/**`, `/v3/api-docs/**`) and OAuth2 login fallback
 - External HTTP calls via `RestClient` (built from auto-configured `RestClient.Builder`); async operations via `@Async` with dedicated `ThreadPoolTaskExecutor`
 
 ## Testing notes
