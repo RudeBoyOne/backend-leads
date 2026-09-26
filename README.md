@@ -3,13 +3,13 @@
 API de gestão de leads imobiliários. Recebe leads de portais externos, envia e-mail de notificação,
 consulta insights e gerencia usuários (corretores, gerentes), imóveis, atividades e lead owners.
 
-**Stack:** Kotlin 2.2.20 (JVM 21) · Spring Boot 3.5.3 · Spring Web · Spring Data JPA · Spring Security
-(OAuth2 Client + Resource Server) · jjwt 0.12.3 · PostgreSQL 16 · Flyway · Spring Mail · Actuator ·
-SpringDoc 2.8.9 · Maven Wrapper. Sem CI/CD.
+**Stack:** Kotlin 2.3.21 (JVM 25) · Spring Boot 4.1.1 · Spring Web · Spring Data JPA · Spring Security
+(OAuth2 Client + Resource Server) · jjwt 0.12.7 · PostgreSQL 16 · Flyway · Spring Mail · Actuator ·
+SpringDoc 3.1.1 · Gradle Wrapper. Sem CI/CD.
 
 ## Requisitos e execução
 
-Pré-requisitos: **JDK 21**, **Docker** + **Docker Compose** (o Maven wrapper `./mvnw` dispensa Maven local).
+Pré-requisitos: **JDK 25**, **Docker** + **Docker Compose** (o Gradle wrapper `./gradlew` dispensa Gradle local).
 
 ```bash
 docker network create lead-network   # uma única vez, exigida pelo docker-compose
@@ -19,15 +19,15 @@ docker compose up -d                 # sobe PostgreSQL 16 + app em :8080
 Sem Docker (PostgreSQL acessível em `localhost:5432`):
 
 ```bash
-./mvnw spring-boot:run
+./gradlew bootRun
 ```
 
 ### Comandos
 
 ```bash
-./mvnw compile        # compila (Kotlin) — sempre antes de commitar
-./mvnw test           # único teste: contexto da aplicação (exige PostgreSQL no ar)
-./mvnw clean install -DskipTests
+./gradlew compile       # compila (Kotlin) — sempre antes de commitar
+./gradlew test          # único teste: contexto da aplicação (exige PostgreSQL no ar)
+./gradlew clean build -x test
 docker compose down   # parar (use -v para remover o volume do banco)
 ```
 

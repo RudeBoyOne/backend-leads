@@ -8,5 +8,5 @@ import jakarta.persistence.Table
 @Table(name = "manager")
 open class Manager(
     @Column(name = "branch_office")
-    var branchOffice: String? = null
+    open var branchOffice: String? = null
 ) : User()

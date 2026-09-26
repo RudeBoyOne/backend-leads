@@ -26,26 +26,26 @@ import java.util.UUID
 abstract class User(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    var id: UUID? = null,
+    open var id: UUID? = null,
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
-    var role: Role? = null,
+    open var role: Role? = null,
 
     @Column(name = "name", nullable = false)
-    var name: String? = null,
+    open var name: String? = null,
 
     @Column(name = "email", nullable = false, unique = true)
-    var email: String? = null,
+    open var email: String? = null,
 
     @Column(name = "active", nullable = false)
-    var isActive: Boolean = true,
+    open var isActive: Boolean = true,
 
     @Column(name = "created_at", updatable = false)
-    var createdAt: LocalDateTime? = null,
+    open var createdAt: LocalDateTime? = null,
 
     @Column(name = "updated_at")
-    var updatedAt: LocalDateTime? = null
+    open var updatedAt: LocalDateTime? = null
 ) : UserDetails {
 
     @PrePersist

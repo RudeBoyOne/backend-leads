@@ -12,24 +12,22 @@ import java.util.LinkedHashMap
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
+    private val log = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
 
     @ExceptionHandler(RuntimeException::class)
-    fun handleRuntimeException(ex: RuntimeException): ResponseEntity<Map<String, Any>> {
-        return buildResponse(HttpStatus.BAD_REQUEST, ex.message)
-    }
+    fun handleRuntimeException(ex: RuntimeException): ResponseEntity<Map<String, Any>> = buildResponse(HttpStatus.BAD_REQUEST, ex.message)
 
     @ExceptionHandler(AccessDeniedException::class)
-    fun handleAccessDeniedException(ex: AccessDeniedException): ResponseEntity<Map<String, Any>> {
-        return buildResponse(HttpStatus.FORBIDDEN, "Acesso negado — você não tem permissão para acessar este recurso")
-    }
+    fun handleAccessDeniedException(ex: AccessDeniedException): ResponseEntity<Map<String, Any>> =
+        buildResponse(HttpStatus.FORBIDDEN, "Acesso negado — você não tem permissão para acessar este recurso")
 
     @ExceptionHandler(AuthenticationException::class)
-    fun handleAuthenticationException(ex: AuthenticationException): ResponseEntity<Map<String, Any>> {
-        return buildResponse(HttpStatus.UNAUTHORIZED, "Não autenticado — token inválido ou expirado")
-    }
+    fun handleAuthenticationException(ex: AuthenticationException): ResponseEntity<Map<String, Any>> =
+        buildResponse(HttpStatus.UNAUTHORIZED, "Não autenticado — token inválido ou expirado")
 
     @ExceptionHandler(Exception::class)
     fun handleGenericException(ex: Exception): ResponseEntity<Map<String, Any>> {
+        log.error("Excecao nao tratada", ex)
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno do servidor")
     }
 
@@ -46,24 +44,25 @@ class GlobalExceptionHandler {
                 "status" to 400,
                 "error" to "Bad Request",
                 "message" to "Erro de validação",
-                "fields" to errors
-            )
+                "fields" to errors,
+            ),
         )
     }
 
     @ExceptionHandler(EmailAlreadyExistsException::class)
-    fun handleEmailAlreadyExists(ex: EmailAlreadyExistsException): ResponseEntity<Map<String, Any>> {
-        return buildResponse(HttpStatus.CONFLICT, ex.message)
-    }
+    fun handleEmailAlreadyExists(ex: EmailAlreadyExistsException): ResponseEntity<Map<String, Any>> =
+        buildResponse(HttpStatus.CONFLICT, ex.message)
 
-    private fun buildResponse(status: HttpStatus, message: String?): ResponseEntity<Map<String, Any>> {
-        return ResponseEntity.status(status).body(
+    private fun buildResponse(
+        status: HttpStatus,
+        message: String?,
+    ): ResponseEntity<Map<String, Any>> =
+        ResponseEntity.status(status).body(
             mapOf(
                 "timestamp" to LocalDateTime.now().toString(),
                 "status" to status.value(),
                 "error" to status.reasonPhrase,
-                "message" to (message ?: "")
-            )
+                "message" to (message ?: ""),
+            ),
         )
-    }
 }

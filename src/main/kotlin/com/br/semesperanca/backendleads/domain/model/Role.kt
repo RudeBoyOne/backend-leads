@@ -13,8 +13,8 @@ import java.util.UUID
 open class Role(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    var id: UUID? = null,
+    open var id: UUID? = null,
 
     @Column(name = "name", nullable = false, unique = true)
-    var name: String? = null
+    open var name: String? = null
 )
