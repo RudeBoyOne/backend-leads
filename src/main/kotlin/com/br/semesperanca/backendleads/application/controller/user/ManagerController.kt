@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api/managers")
+@RequestMapping("/managers")
 @Tag(name = "Gerentes", description = "Gerenciamento de gerentes")
 class ManagerController(
     private val service: ManagerService,

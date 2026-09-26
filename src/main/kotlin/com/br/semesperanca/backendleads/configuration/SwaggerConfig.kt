@@ -28,7 +28,7 @@ class SwaggerConfig {
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
                         .bearerFormat("JWT")
-                        .description("Insira o token JWT obtido via /api/auth/login ou Google OAuth2")
+                        .description("Insira o token JWT obtido via /auth/login ou Google OAuth2")
                 )
             )
     }

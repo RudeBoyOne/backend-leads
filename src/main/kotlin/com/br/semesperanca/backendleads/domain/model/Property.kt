@@ -51,6 +51,9 @@ open class Property(
     @Column(name = "status", nullable = false)
     var status: String? = "available",
 
+    @Column(name = "active", nullable = false)
+    var active: Boolean = true,
+
     @Column(name = "created_at", updatable = false)
     var createdAt: LocalDateTime? = null,
 
@@ -59,4 +62,17 @@ open class Property(
 ) {
     @OneToMany(mappedBy = "property", fetch = FetchType.LAZY)
     var activities: MutableList<Activity> = mutableListOf()
+
+    @PrePersist
+    fun prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now()
+        }
+        updatedAt = LocalDateTime.now()
+    }
+
+    @PreUpdate
+    fun preUpdate() {
+        updatedAt = LocalDateTime.now()
+    }
 }

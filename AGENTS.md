@@ -57,10 +57,10 @@ com.br.semesperanca.backendleads
 │   ├── controller/
 │   │   ├── LeadController              # /leads/** (receive, search, getById, delete)
 │   │   ├── security/
-│   │   │   └── AuthController          # /api/auth/** (login, register/full-admin, change-password)
+│   │   │   └── AuthController          # /auth/** (login, register/full-admin, change-password)
 │   │   └── user/
-│   │       ├── ManagerController       # /api/managers/** (CRUD + toggle-active)
-│   │       └── RealEstateAgentController # /api/real-estate-agents/** (CRUD + toggle-active)
+│   │       ├── ManagerController       # /managers/** (CRUD + toggle-active)
+│   │       └── RealEstateAgentController # /real-estate-agents/** (CRUD + toggle-active)
 │   └── model/
 │       ├── LeadDTO.kt                # record for lead response/creation
 │       ├── LeadReceivedNotificationDTO # record for incoming lead notification
@@ -125,7 +125,7 @@ Dois fluxos de autenticação convivem na aplicação: **OAuth2/OpenID Connect (
 | `apiFilterChain` | 2 | catch-all (sem matcher) | Proteção JWT de **todas** as demais rotas — rota nova não exige configuração |
 
 - `apiFilterChain` é catch-all: qualquer rota fora da chain 1 cai aqui e é protegida por JWT automaticamente.
-- Públicas (permitAll): `OPTIONS /**`, `POST /api/auth/login`, `/swagger-ui.html`, `/swagger-ui/**`, `/v3/api-docs/**`, `/actuator/health/**`, `/error`.
+- Públicas (permitAll): `OPTIONS /**`, `POST /auth/login`, `/swagger-ui.html`, `/swagger-ui/**`, `/v3/api-docs/**`, `/actuator/health/**`, `/error`.
 - Não autenticado → `401` JSON (`CustomAuthenticationEntryPoint`); sem permissão de role → `403` JSON (`CustomAccessDeniedHandler`).
 
 ### Emissão de tokens
@@ -162,30 +162,30 @@ O decoder lê o claim `iss` do token (sem verificar assinatura) e roteia para o 
 
 ## API
 
-### Auth (`/api/auth`)
+### Auth (`/auth`)
 | Method | Path | Role | Description |
 |---|---|---|---|
-| `POST` | `/api/auth/login` | Public | Local login (email + password), returns JWT |
-| `POST` | `/api/auth/register/full-admin` | `FULL_ADMIN` | Create new super admin |
-| `PATCH` | `/api/auth/change-password` | Authenticated | Change own password |
+| `POST` | `/auth/login` | Public | Local login (email + password), returns JWT |
+| `POST` | `/auth/register/full-admin` | `FULL_ADMIN` | Create new super admin |
+| `PATCH` | `/auth/change-password` | Authenticated | Change own password |
 
-### Real Estate Agents (`/api/real-estate-agents`)
+### Real Estate Agents (`/real-estate-agents`)
 | Method | Path | Role | Description |
 |---|---|---|---|
-| `GET` | `/api/real-estate-agents` | `FULL_ADMIN`, `ADMIN` | List all |
-| `POST` | `/api/real-estate-agents` | `FULL_ADMIN`, `ADMIN` | Create |
-| `GET` | `/api/real-estate-agents/{id}` | `FULL_ADMIN`, `ADMIN`, `REAL_ESTATE_AGENT` | Get by ID |
-| `PUT` | `/api/real-estate-agents/{id}` | `FULL_ADMIN`, `ADMIN` | Update |
-| `PATCH` | `/api/real-estate-agents/{id}/toggle-active` | `FULL_ADMIN`, `ADMIN` | Activate/deactivate |
+| `GET` | `/real-estate-agents` | `FULL_ADMIN`, `ADMIN` | List all |
+| `POST` | `/real-estate-agents` | `FULL_ADMIN`, `ADMIN` | Create |
+| `GET` | `/real-estate-agents/{id}` | `FULL_ADMIN`, `ADMIN`, `REAL_ESTATE_AGENT` | Get by ID |
+| `PUT` | `/real-estate-agents/{id}` | `FULL_ADMIN`, `ADMIN` | Update |
+| `PATCH` | `/real-estate-agents/{id}/toggle-active` | `FULL_ADMIN`, `ADMIN` | Activate/deactivate |
 
-### Managers (`/api/managers`)
+### Managers (`/managers`)
 | Method | Path | Role | Description |
 |---|---|---|---|
-| `GET` | `/api/managers` | `FULL_ADMIN`, `ADMIN` | List all |
-| `POST` | `/api/managers` | `FULL_ADMIN`, `ADMIN` | Create |
-| `GET` | `/api/managers/{id}` | `FULL_ADMIN`, `ADMIN`, `MANAGER` | Get by ID |
-| `PUT` | `/api/managers/{id}` | `FULL_ADMIN`, `ADMIN`, `MANAGER` | Update |
-| `PATCH` | `/api/managers/{id}/toggle-active` | `FULL_ADMIN`, `ADMIN` | Activate/deactivate |
+| `GET` | `/managers` | `FULL_ADMIN`, `ADMIN` | List all |
+| `POST` | `/managers` | `FULL_ADMIN`, `ADMIN` | Create |
+| `GET` | `/managers/{id}` | `FULL_ADMIN`, `ADMIN`, `MANAGER` | Get by ID |
+| `PUT` | `/managers/{id}` | `FULL_ADMIN`, `ADMIN`, `MANAGER` | Update |
+| `PATCH` | `/managers/{id}/toggle-active` | `FULL_ADMIN`, `ADMIN` | Activate/deactivate |
 
 ### Leads (`/leads`)
 | Method | Path | Role | Description |

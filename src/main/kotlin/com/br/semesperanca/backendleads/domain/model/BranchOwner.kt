@@ -23,9 +23,25 @@ open class BranchOwner(
     @Column(name = "phone")
     var phone: String? = null,
 
+    @Column(name = "active", nullable = false)
+    var active: Boolean = true,
+
     @Column(name = "created_at", updatable = false)
     var createdAt: LocalDateTime? = null,
 
     @Column(name = "updated_at")
     var updatedAt: LocalDateTime? = null
-)
+) {
+    @PrePersist
+    fun prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now()
+        }
+        updatedAt = LocalDateTime.now()
+    }
+
+    @PreUpdate
+    fun preUpdate() {
+        updatedAt = LocalDateTime.now()
+    }
+}

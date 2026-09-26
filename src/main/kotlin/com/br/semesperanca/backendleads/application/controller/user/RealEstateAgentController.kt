@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api/real-estate-agents")
+@RequestMapping("/real-estate-agents")
 @Tag(name = "Corretores", description = "Gerenciamento de corretores imobiliários")
 class RealEstateAgentController(
     private val service: RealEstateAgentService,
