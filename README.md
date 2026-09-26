@@ -9,7 +9,8 @@ SpringDoc 3.1.1 · Gradle Wrapper. Sem CI/CD.
 
 ## Requisitos e execução
 
-Pré-requisitos: **JDK 25**, **Docker** + **Docker Compose** (o Gradle wrapper `./gradlew` dispensa Gradle local).
+Pré-requisitos: **JDK 25**, **Docker** + **Docker Compose** (o Gradle wrapper `./gradlew` dispensa
+Gradle local).
 
 ```bash
 docker network create lead-network   # uma única vez, exigida pelo docker-compose
@@ -25,10 +26,10 @@ Sem Docker (PostgreSQL acessível em `localhost:5432`):
 ### Comandos
 
 ```bash
-./gradlew compile       # compila (Kotlin) — sempre antes de commitar
-./gradlew test          # único teste: contexto da aplicação (exige PostgreSQL no ar)
+./gradlew compile            # compila (Kotlin) — sempre antes de commitar
+./gradlew test               # único teste: contexto da aplicação (exige PostgreSQL no ar)
 ./gradlew clean build -x test
-docker compose down   # parar (use -v para remover o volume do banco)
+docker compose down          # parar (use -v para remover o volume do banco)
 ```
 
 ### Variáveis de ambiente
@@ -59,7 +60,7 @@ logging/      LoggingFilter (MDC)
 
 Regras de separação: controllers são finos (delegam a `domain/service`); DTOs são `data class` em
 `application/model/{request,response}`; entidades JPA em `domain/model`; nada de regra de negócio no
-controller. Injeção sempre por construtor (`@RequiredArgsConstructor`), nunca por campo.
+controller. Injeção sempre por construtor (primary constructor do Kotlin), nunca por campo.
 
 O contrato HTTP completo está no Swagger (`/swagger-ui.html`, `/v3/api-docs`) — não duplique tabelas de
 endpoints aqui. Grupos de rotas: `/auth`, `/leads`, `/managers`, `/real-estate-agents`, `/properties`,
@@ -99,15 +100,20 @@ Consequências práticas:
 
 ## Convenções
 
-- DTOs: `data class` com validação `jakarta.validation`; entidades JPA: Lombok
-  (`@Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor`).
+- DTOs: `data class` com validação `jakarta.validation`. Entidades JPA: `open class` com propriedades
+  `open var` e construtor primário com defaults (sem Lombok). O `open` não é opcional: o Hibernate 7
+  valida proxyability e lança `Getter methods of lazy classes cannot be final` se getter ou setter for
+  `final` — e em Kotlin `open class` não abre os accessors de `var`.
 - Herança JPA: `User` abstrata com `InheritanceType.JOINED`, estendida por `Manager` e
   `RealEstateAgent`.
 - Migrações Flyway: SQL puro em `src/main/resources/db/migration/` (`V0NN__descricao.sql`); nunca edite
   migration já aplicada — crie uma nova. `open-in-view: false`: carregue o que precisa de forma explícita.
 - `application.yml` referencia variáveis de ambiente via `${...}`; nada de valor secret no repositório.
-- HTTP externo via `RestClient` (a partir do `RestClient.Builder` autoconfigurado); tarefas assíncronas
-  via `@Async` + `ThreadPoolTaskExecutor` de `AsyncConfiguration`.
+- HTTP externo via `RestClient` (`RestClient.Builder` vem do `spring-boot-starter-restclient`, ausente
+  do starter web no Boot 4); tarefas assíncronas via `@Async` + `ThreadPoolTaskExecutor` de
+  `AsyncConfiguration`.
+- Jackson 3: imports em `tools.jackson.*` (`tools.jackson.databind.ObjectMapper`); anotações continuam
+  em `com.fasterxml.jackson.annotation`.
 - Exceções: `GlobalExceptionHandler` (`@RestControllerAdvice`) trata Runtime, AccessDenied, Auth,
   Validation e 500 — prefira lançar exceção tipada a montar `ResponseEntity` no controller.
 
@@ -121,7 +127,9 @@ triggers de `updated_at` (V006) e seed da agency "Sistema" com dois `FULL_ADMIN`
 ## Testes
 
 Um único teste, `BackendLeadsApplicationTests` (@SpringBootTest, apenas carrega o contexto). Exige
-PostgreSQL em execução; não há Testcontainers nem perfil H2.
+PostgreSQL em execução; não há Testcontainers nem perfil H2. O serviço `postgres` do compose **não
+publica a porta 5432**, então `./gradlew test` (rodando na host) só conecta se `DB_URL` apontar para um
+Postgres acessível — mantenha o `DB_URL=postgres:5432` do `.env` apenas para o container da app.
 
 ## Documentação da API
 
