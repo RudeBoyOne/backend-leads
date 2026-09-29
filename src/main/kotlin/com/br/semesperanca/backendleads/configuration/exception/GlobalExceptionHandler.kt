@@ -7,6 +7,7 @@ import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.servlet.resource.NoResourceFoundException
 import java.time.LocalDateTime
 import java.util.LinkedHashMap
 
@@ -24,6 +25,12 @@ class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException::class)
     fun handleAuthenticationException(ex: AuthenticationException): ResponseEntity<Map<String, Any>> =
         buildResponse(HttpStatus.UNAUTHORIZED, "Não autenticado — token inválido ou expirado")
+
+    @ExceptionHandler(NoResourceFoundException::class)
+    fun handleNoResourceFound(ex: NoResourceFoundException): ResponseEntity<Map<String, Any>> {
+        log.warn("Recurso nao encontrado: {}", ex.resourcePath)
+        return buildResponse(HttpStatus.NOT_FOUND, "Recurso não encontrado")
+    }
 
     @ExceptionHandler(Exception::class)
     fun handleGenericException(ex: Exception): ResponseEntity<Map<String, Any>> {

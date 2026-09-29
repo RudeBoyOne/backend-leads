@@ -3,6 +3,7 @@ package com.br.semesperanca.backendleads.configuration.exception
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.core.MethodParameter
+import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.AccessDeniedException
@@ -10,6 +11,7 @@ import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.validation.BeanPropertyBindingResult
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.servlet.resource.NoResourceFoundException
 
 class GlobalExceptionHandlerTest {
     private val handler = GlobalExceptionHandler()
@@ -89,6 +91,21 @@ class GlobalExceptionHandlerTest {
 
         assertEnvelope(response, HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno do servidor")
         assertThat(response.body!!).doesNotContainValue("conexao com o banco caiu")
+    }
+
+    /**
+     * `NoResourceFoundException` é o que o Spring 7 lança para URL sem mapping.
+     * Ela é uma `Exception`, então o catch-all a engolia e devolvia 500; o
+     * handler específico ganha por tipo e devolve 404 no mesmo envelope dos
+     * demais erros.
+     */
+    @Test
+    fun `NoResourceFoundException vira 404 em vez de cair no 500 generico`() {
+        val exception = NoResourceFoundException(HttpMethod.GET, "/rota-que-nao-existe", "/rota-que-nao-existe")
+
+        val response = handler.handleNoResourceFound(exception)
+
+        assertEnvelope(response, HttpStatus.NOT_FOUND, "Recurso não encontrado")
     }
 
     @Test

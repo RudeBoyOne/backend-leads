@@ -271,15 +271,16 @@ class SecurityFilterChainIntegrationTest : AbstractIntegrationTest() {
     }
 
     /**
-     * Bug de handler, não de teste: rota inexistente deveria dar 404, mas o
-     * `GlobalExceptionHandler` não estende `ResponseEntityExceptionHandler` e
-     * tem um `@ExceptionHandler(Exception::class)` que engole o
-     * `NoResourceFoundException` e devolve 500. Um `GET` em URL errada — typo
-     * de front, endpoint removido, robô de varredura — aparece nos logs como
-     * erro interno. Fixado aqui, não corrigido.
+     * `GlobalExceptionHandler` tem um `@ExceptionHandler(Exception::class)` que
+     * engole o `NoResourceFoundException` do Spring 7 e devolve 500 — um `GET`
+     * em URL errada (typo de front, endpoint removido, robô de varredura)
+     * virava erro interno no log. O handler específico de
+     * `NoResourceFoundException` ganha por tipo, sem precisar estender
+     * `ResponseEntityExceptionHandler` (que trocaria o corpo de todos os erros
+     * MVC por `ProblemDetail`).
      */
     @Test
-    fun `rota inexistente com token válido dá 500 e não 404 porque o handler engole NoResourceFoundException`() {
+    fun `rota inexistente com token válido dá 404 e não 500`() {
         val resposta =
             mvc
                 .perform(
@@ -289,8 +290,8 @@ class SecurityFilterChainIntegrationTest : AbstractIntegrationTest() {
                 ).andReturn()
                 .response
 
-        assertThat(resposta.status).isEqualTo(500)
-        assertThat(resposta.contentAsString).contains("Erro interno do servidor")
+        assertThat(resposta.status).isEqualTo(404)
+        assertThat(resposta.contentAsString).contains("Recurso não encontrado")
     }
 
     @Test
@@ -299,8 +300,10 @@ class SecurityFilterChainIntegrationTest : AbstractIntegrationTest() {
     }
 
     /**
-     * `/error` está liberada nas duas chains, mas sem atributo de erro no request
-     * ela cai no mesmo `Exception` genérico e devolve 500.
+     * `/error` está liberada nas duas chains e é atendida pelo
+     * `BasicErrorController`, não pelo `GlobalExceptionHandler`. Sem atributo de
+     * erro no request, o controller cai no 500 padrão dele — o handler de
+     * `NoResourceFoundException` não muda esse caminho.
      */
     @Test
     fun `a rota de erro é pública mas devolve 500 quando não há erro para reportar`() {
