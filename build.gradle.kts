@@ -5,7 +5,12 @@ plugins {
     id("org.springframework.boot") version "4.1.1"
     kotlin("jvm") version "2.3.21"
     kotlin("plugin.allopen") version "2.3.21"
+    jacoco
 }
+
+// 0.8.14 e a primeira release com suporte oficial a classe files do Java 25
+// (class file major version 69) — o projeto compila para JVM 25.
+val jacocoToolVersion = "0.8.14"
 
 group = "com.br.semesperanca"
 version = "0.0.1-SNAPSHOT"
@@ -96,10 +101,59 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    // No Boot 4 a infraestrutura de teste tambem foi modularizada:
+    // spring-boot-starter-test NAO traz mais @WebMvcTest/@DataJpaTest.
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
+    // @RestClientTest + MockRestServiceServer (substitui WireMock no InsightClient)
+    testImplementation("org.springframework.boot:spring-boot-restclient-test")
+    // Infraestrutura de seguranca nos slices @WebMvcTest
+    testImplementation("org.springframework.boot:spring-boot-security-test")
+    // @ServiceConnection, para o container alimentar o DataSource sozinho
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    // Testcontainers 2.x: artefatos com prefixo "testcontainers-" e pacotes proprios
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-postgresql")
+    // DSL Kotlin para Mockito: any(), eq(), verify {} com ArgumentCaptor tipado,
+    // sem as raw do Java (any(Class), eq(Nullable) sao bags de nullability).
+    // O Mockito 5 ja usa mock maker inline, entao classes final do Kotlin sao mockaveis.
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
 }
 
 // O plugin do Spring Boot nao configura a task Test: sem esta linha
 // ./gradlew test passa com 0 testes.
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    // O JaCoCo instrumenta via java agent; no JDK 21+ isso exige a flag explicita
+    finalizedBy(tasks.jacocoTestReport)
+    jvmArgs("-XX:+EnableDynamicAgentLoading")
+}
+
+extensions.configure<JacocoPluginExtension> {
+    toolVersion = jacocoToolVersion
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        html.required = true
+        xml.required = true
+    }
+}
+
+// Meta enforcada: 90% de linha cobertas. Build falha abaixo disso.
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.90".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }
