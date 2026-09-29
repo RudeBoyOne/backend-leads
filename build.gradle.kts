@@ -17,13 +17,19 @@ java {
     }
 }
 
-// NUNCA usar kotlin("plugin.jpa") ou kotlin("plugin.spring"): ambos habilitam
-// tambem o compilador noarg, que mudaria a estrategia de persistencia do
-// Hibernate (Activity.lead nao tem valor default e depende do construtor
-// canonico do Hibernate). O preset "spring" tambem nao cobre @Service,
-// @Repository, @RestController, @ControllerAdvice, @Configuration e
-// @ConfigurationProperties — por isso as anotacoes sao declaradas aqui.
+// all-open PURO: abre classe e membros anotados, sem gerar construtor vazio.
+// NUNCA usar kotlin("plugin.jpa") aqui — ele tambem habilita o compilador noarg,
+// que mudaria a estrategia de persistencia do Hibernate: as entities ficariam com
+// construtor no-arg e o Hibernate 7 passaria a instanciar por ele, em vez do
+// construtor canonico (Activity.lead nao tem valor default).
+//
+// As stereotypes do Spring sao declaradas uma a uma em vez do preset
+// kotlin("plugin.spring") para manter o build independente do plugin do Spring
+// Boot; a lista e equivalente ao preset, acrescida de @ConfigurationProperties.
 allOpen {
+    annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.MappedSuperclass")
+    annotation("jakarta.persistence.Embeddable")
     annotation("org.springframework.stereotype.Component")
     annotation("org.springframework.stereotype.Service")
     annotation("org.springframework.stereotype.Repository")

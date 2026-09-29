@@ -1,135 +1,173 @@
 # Backend-leads
 
-API de gestão de leads imobiliários. Recebe leads de portais externos, envia e-mail de notificação,
-consulta insights e gerencia usuários (corretores, gerentes), imóveis, atividades e lead owners.
+API de gestão de leads imobiliários. Recebe leads de portais externos, envia um e-mail de notificação,
+consulta um serviço de insights e administra usuários (corretores e gerentes), imóveis, atividades e
+responsáveis por ramais.
 
 **Stack:** Kotlin 2.3.21 (JVM 25) · Spring Boot 4.1.1 · Spring Web · Spring Data JPA · Spring Security
 (OAuth2 Client + Resource Server) · jjwt 0.12.7 · PostgreSQL 16 · Flyway · Spring Mail · Actuator ·
-SpringDoc 3.1.1 · Gradle Wrapper. Sem CI/CD.
+SpringDoc 3.1.1 · Gradle Wrapper. Não há CI/CD.
 
-## Requisitos e execução
+## Rodando o projeto
 
-Pré-requisitos: **JDK 25**, **Docker** + **Docker Compose** (o Gradle wrapper `./gradlew` dispensa
-Gradle local).
+São necessários o **JDK 25** e o **Docker** com Docker Compose. Gradle não precisa ser instalado: o
+wrapper (`./gradlew`) resolve a versão sozinho.
+
+O compose depende de uma rede externa chamada `lead-network`, criada uma única vez:
 
 ```bash
-docker network create lead-network   # uma única vez, exigida pelo docker-compose
-docker compose up -d                 # sobe PostgreSQL 16 + app em :8080
+docker network create lead-network
+docker compose up -d
 ```
 
-Sem Docker (PostgreSQL acessível em `localhost:5432`):
+O PostgreSQL e a aplicação sobem juntos, e a aplicação responde em `:8080`.
+
+Quem já tiver um PostgreSQL acessível em `localhost:5432` pode rodar sem o Docker:
 
 ```bash
 ./gradlew bootRun
 ```
 
-### Comandos
+### Comandos do dia a dia
 
 ```bash
-./gradlew compile            # compila (Kotlin) — sempre antes de commitar
-./gradlew test               # único teste: contexto da aplicação (exige PostgreSQL no ar)
+./gradlew compile            # compila (Kotlin) — rode antes de commitar
+./gradlew test               # único teste: carrega o contexto (precisa do PostgreSQL no ar)
 ./gradlew clean build -x test
-docker compose down          # parar (use -v para remover o volume do banco)
+docker compose down          # derruba os serviços (-v também apaga o volume do banco)
 ```
 
 ### Variáveis de ambiente
 
-Carregadas do `.env` (gitignored; ver `.env.example`). Obrigatórias:
+O `.env` é carregado no start. Ele é ignorado pelo git, e o modelo está em `.env.example`.
 
-| Variável | Uso |
+| Variável | Para que serve |
 | --- | --- |
-| `DB_URL`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Conexão PostgreSQL (`DB_URL=postgres:5432` no compose) |
-| `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP (Hostinger, porta 465) |
-| `JWT_SECRET` | Chave HMAC-SHA256 (mín. 32 bytes) para assinatura dos tokens locais |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Credenciais OAuth2 do Google |
-| `OAUTH2_ISSUER_URI` | Emissor OAuth2 (ex.: `https://accounts.google.com`) |
+| `DB_URL`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Conexão com o PostgreSQL (no compose, `DB_URL=postgres:5432`) |
+| `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP da Hostinger, na porta 465 |
+| `JWT_SECRET` | Chave HMAC-SHA256, com no mínimo 32 bytes, que assina os tokens locais |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Credenciais do OAuth2 do Google |
+| `OAUTH2_ISSUER_URI` | Emissor OAuth2, por exemplo `https://accounts.google.com` |
 
-Opcionais (default em `application.yml`): `JWT_ISSUER` (claim `iss` dos tokens locais,
-`http://backend-leads.local`) e `FRONTEND_URL` (redirect pós-login Google, `http://localhost:3000`).
+Duas variáveis são opcionais e já têm padrão no `application.yml`: `JWT_ISSUER`, que é o claim `iss`
+dos tokens locais (`http://backend-leads.local`), e `FRONTEND_URL`, para onde o usuário vai depois do
+login com Google (`http://localhost:3000`).
 
-## Arquitetura
+## Organização do código
 
-Kotlin em camadas, pacote raiz `com.br.semesperanca.backendleads` (`src/main/kotlin`):
+O código vive em `src/main/kotlin`, sob o pacote `com.br.semesperanca.backendleads`, em quatro
+camadas:
 
 ```
-application/  controller/ (REST) · model/ (DTOs: data classes)
-domain/       model/ (JPA) · repository/ · service/
-configuration/ security/ · exception/ · mail · swagger · async
-logging/      LoggingFilter (MDC)
+application/   controllers REST e DTOs (data classes)
+domain/        entidades JPA, repositories e services
+configuration/ segurança, tratamento de exceções, e-mail, Swagger, async
+logging/       LoggingFilter, que popula o MDC
 ```
 
-Regras de separação: controllers são finos (delegam a `domain/service`); DTOs são `data class` em
-`application/model/{request,response}`; entidades JPA em `domain/model`; nada de regra de negócio no
-controller. Injeção sempre por construtor (primary constructor do Kotlin), nunca por campo.
+A separação é simples e vale respeitar. Controllers são finos e só delegam para `domain/service`;
+regra de negócio mora no service. DTOs são `data class` em `application/model/{request,response}` e
+as entidades JPA ficam em `domain/model`. Dependências entram sempre pelo construtor primário do
+Kotlin, nunca por campo.
 
-O contrato HTTP completo está no Swagger (`/swagger-ui.html`, `/v3/api-docs`) — não duplique tabelas de
-endpoints aqui. Grupos de rotas: `/auth`, `/leads`, `/managers`, `/real-estate-agents`, `/properties`,
-`/branch-owners`, `/activities`.
+A lista completa de rotas está no Swagger, e é lá que ela deve ser mantida — este README não
+duplica essa tabela. Os grupos são `/auth`, `/leads`, `/managers`, `/real-estate-agents`,
+`/properties`, `/branch-owners` e `/activities`.
 
-## Segurança (híbrida) — regras obrigatórias
+## Segurança
 
-Duas `SecurityFilterChain` em `configuration/security/OAuth2LoginSecurityConfig.kt`:
+Dois fluxos de autenticação convivem na aplicação: login social com Google, via OAuth2/OIDC, e login
+local por e-mail e senha, que devolve um JWT. A API aceita tokens dos dois.
 
-1. `oauth2FilterChain` (`@Order(1)`, matcher `/oauth2/**`, `/login/**`, `/error`) — login social no
-   browser. Fora dela, `anyRequest().permitAll()`.
-2. `apiFilterChain` (`@Order(2)`, **catch-all sem matcher**) — toda rota fora da chain 1 nasce
-   protegida por JWT.
+Na prática isso são duas `SecurityFilterChain`, em `configuration/security/OAuth2LoginSecurityConfig.kt`:
 
-Consequências práticas:
+- `oauth2FilterChain`, com `@Order(1)`, responde apenas por `/oauth2/**`, `/login/**` e `/error`. É o
+  login social no browser, e dentro dela qualquer rota é liberada.
+- `apiFilterChain`, com `@Order(2)`, não declara matcher nenhum, então funciona como catch-all:
+  tudo que não caiu na primeira chain é protegido por JWT.
 
-- **Rota nova = autenticada por padrão.** Só adicione `permitAll` se for realmente público; caso
-  contrário, detalhe explicitamente as roles em `authorizeHttpRequests` (o `anyRequest().authenticated()`
-  é o fallback).
-- Papéis: `FULL_ADMIN`, `ADMIN`, `MANAGER`, `REAL_ESTATE_AGENT`. Papéis novos exigem seed na migration
-  de `role` (V001) — nunca hardcode strings fora da config.
-- `GET /actuator/health/**`, `POST /auth/login`, `/swagger-ui/**`, `/v3/api-docs/**` e `/error` são
-  públicos. Falta de autenticação → `401` JSON; falta de role → `403` JSON.
+Dessa come as rotas novas já nascem autenticadas, sem configuração. Se a rota for realmente pública,
+ela precisa aparecer explicitamente em `permitAll`. Nos demais casos, as roles vão em
+`authorizeHttpRequests` e o `anyRequest().authenticated()` cobre o que sobrar.
 
-**Emissão e validação de tokens**
+Os papéis reconhecidos são `FULL_ADMIN`, `ADMIN`, `MANAGER` e `REAL_ESTATE_AGENT`. Um papel novo
+precisa de seed na migration que cria a tabela `role` (V001). Hoje são públicos o
+`GET /actuator/health/**`, o `POST /auth/login`, o Swagger, o `/v3/api-docs/**` e o `/error`. Falta
+de autenticação devolve `401` em JSON; falta de papel, `403` em JSON.
 
-- Token local: `JwtService` assina HS256 com `JWT_SECRET`; claims `iss` (app), `sub` (userId), `role`,
-  `email`, `iat`, `exp`.
-- Login Google: `OAuth2SuccessHandler` cria o `RealEstateAgent` quando o e-mail não existe e
-  `email_verified == true`, e redireciona para `{app.frontend-url}/auth/callback?token=<id_token>`.
-- `CustomJwtDecoder` lê o claim `iss` e roteia: issuer local → HS256 com `JWT_SECRET`; issuer do Google
-  → JWKS (carregado lazy, sem rede no boot). Issuer desconhecido → `401`. Google exige `aud` com
-  `GOOGLE_CLIENT_ID`.
-- `CustomJwtAuthenticationConverter` resolve a autoridade: token local → `ROLE_<claim role>`; token
-  Google → role real do banco via `UserRepository.findByEmail` (usuário inexistente ou e-mail não
-  verificado cai em `ROLE_REAL_ESTATE_AGENT`; usuário inativo → `401`).
+### Emissão e validação dos tokens
 
-## Convenções
+O token local é assinado pela `JwtService` com HS256 e `JWT_SECRET`, e carrega `iss` (a aplicação),
+`sub` (o id do usuário), `role`, `email`, `iat` e `exp`.
 
-- DTOs: `data class` com validação `jakarta.validation`. Entidades JPA: `open class` com propriedades
-  `open var` e construtor primário com defaults (sem Lombok). O `open` não é opcional: o Hibernate 7
-  valida proxyability e lança `Getter methods of lazy classes cannot be final` se getter ou setter for
-  `final` — e em Kotlin `open class` não abre os accessors de `var`.
-- Herança JPA: `User` abstrata com `InheritanceType.JOINED`, estendida por `Manager` e
-  `RealEstateAgent`.
-- Migrações Flyway: SQL puro em `src/main/resources/db/migration/` (`V0NN__descricao.sql`); nunca edite
-  migration já aplicada — crie uma nova. `open-in-view: false`: carregue o que precisa de forma explícita.
-- `application.yml` referencia variáveis de ambiente via `${...}`; nada de valor secret no repositório.
-- HTTP externo via `RestClient` (`RestClient.Builder` vem do `spring-boot-starter-restclient`, ausente
-  do starter web no Boot 4); tarefas assíncronas via `@Async` + `ThreadPoolTaskExecutor` de
-  `AsyncConfiguration`.
-- Jackson 3: imports em `tools.jackson.*` (`tools.jackson.databind.ObjectMapper`); anotações continuam
-  em `com.fasterxml.jackson.annotation`.
-- Exceções: `GlobalExceptionHandler` (`@RestControllerAdvice`) trata Runtime, AccessDenied, Auth,
-  Validation e 500 — prefira lançar exceção tipada a montar `ResponseEntity` no controller.
+No login com Google, a `OAuth2SuccessHandler` cria um `RealEstateAgent` quando o e-mail ainda não
+existe e `email_verified` é verdadeiro, e redireciona para
+`{app.frontend-url}/auth/callback?token=<id_token>`.
+
+A `CustomJwtDecoder` olha o claim `iss` e escolhe o decoder: para o issuer local, HS256 com
+`JWT_SECRET`; para o issuer do Google, JWKS, carregado sob demanda e sem tocar a rede durante a
+subida. Um issuer desconhecido resulta em `401`. No caso do Google, o `aud` precisa conter
+`GOOGLE_CLIENT_ID`.
+
+A `CustomJwtAuthenticationConverter` define a autoridade a partir do token. Token local usa o claim
+`role`; token do Google busca a role no banco, via `UserRepository.findByEmail` — usuário inexistente
+ou e-mail não verificado cai em `ROLE_REAL_ESTATE_AGENT`, e usuário inativo resulta em `401`.
+
+## Convenções de código
+
+**DTOs e entidades.** DTOs são `data class` com validação `jakarta.validation`. As entidades JPA são
+classes comuns de Kotlin, com construtor primário e valores padrão, e **não declaram `open class` nem
+`open var`** — quem abre classe e membros é o plugin `all-open`, configurado no `build.gradle.kts`
+para `@Entity`, `@MappedSuperclass` e `@Embeddable`.
+
+Isso não é cosmético. O Hibernate 7 recusa getters e setters `final` com o erro `Getter methods of
+lazy classes cannot be final`, e em Kotlin `open class` sozinho não abriria os accessors de uma
+`var`: seria preciso marcar cada propriedade, e esquecer uma passaria despercebida até a primeira
+navegação lazy.
+
+O `all-open` é configurado sem o plugin `noarg` de propósito. `Activity.lead` não tem valor padrão,
+então as entidades dependem do construtor canônico, e um construtor vazio gerado automaticamente
+mudaria a estratégia de instanciação do Hibernate.
+
+**Herança de usuários.** `User` é abstrata, com `InheritanceType.JOINED`, e concentra o que é comum
+a qualquer usuário. `Manager` acrescenta `branch_office` e `RealEstateAgent` acrescenta `creci`,
+cada uma em sua própria tabela filha.
+
+**Migrações.** SQL puro em `src/main/resources/db/migration/`, no formato `V0NN__descricao.sql`.
+Migration já aplicada não se edita: cria-se uma nova. Como `open-in-view` está `false`, o que a
+requisição precisa tem de ser carregado explicitamente.
+
+**Configuração.** O `application.yml` referencia variáveis de ambiente com `${...}`, e nenhum valor
+secreto entra no repositório.
+
+**Integrações.** Chamadas HTTP externas usam `RestClient`. O `RestClient.Builder` vem do
+`spring-boot-starter-restclient`, que não vem mais junto do starter web no Boot 4. Tarefas assíncronas
+usam `@Async` com o `ThreadPoolTaskExecutor` definido em `AsyncConfiguration`.
+
+**Jackson.** Versão 3: os imports ficam em `tools.jackson.*` e o `ObjectMapper` em
+`tools.jackson.databind`. As anotações continuam em `com.fasterxml.jackson.annotation`.
+
+**Exceções.** A `GlobalExceptionHandler` (`@RestControllerAdvice`) trata Runtime, AccessDenied, Auth,
+Validation e 500. Preferir lançar uma exceção tipada a montar um `ResponseEntity` no controller.
 
 ## Banco de dados
 
-PostgreSQL 16 gerenciado por Flyway (`V001`–`V013`): `role`, `plan`, `real_estate_agency`,
-`subscription`, `"users"`, `real_estate_agent`, `manager`, `team`, `team_agent`, `portal`,
-`funnel_stage`, `lead`, `lead_interaction`, `activity`, `property`, `branch_owner` (V008+), além de
-triggers de `updated_at` (V006) e seed da agency "Sistema" com dois `FULL_ADMIN` (V007).
+PostgreSQL 16, gerenciado por Flyway. As migrations criam `role`, `plan`, `real_estate_agency` e
+`subscription` (V001); `"users"`, `real_estate_agent`, `manager`, `team` e `team_agent` (V002);
+`portal` e `funnel_stage` (V003); `lead` (V004); `lead_interaction` (V005); `activity` (V008);
+`property` (V009) e `branch_owner` (V010).
+
+A V006 instala os triggers de `updated_at`, e a V007 faz o seed da agency "Sistema" com dois
+`FULL_ADMIN`. As V011 a V013 ajustam `activity`, `property` e `branch_owner`.
 
 ## Testes
 
-Um único teste, `BackendLeadsApplicationTests` (@SpringBootTest, apenas carrega o contexto). Exige
-PostgreSQL em execução; não há Testcontainers nem perfil H2. O serviço `postgres` do compose **não
-publica a porta 5432**, então `./gradlew test` (rodando na host) só conecta se `DB_URL` apontar para um
-Postgres acessível — mantenha o `DB_URL=postgres:5432` do `.env` apenas para o container da app.
+Existe um único teste, `BackendLeadsApplicationTests`, que só carrega o contexto da aplicação. Ele
+precisa de um PostgreSQL no ar — não há Testcontainers nem perfil H2.
+
+Um detalhe que costuma frustrar: o serviço `postgres` do compose não publica a porta 5432, então
+`./gradlew test` rodando na máquina só conecta se o `DB_URL` apontar para um Postgres alcançável. O
+`DB_URL=postgres:5432` do `.env` serve ao container da aplicação, não ao test na host.
 
 ## Documentação da API
 

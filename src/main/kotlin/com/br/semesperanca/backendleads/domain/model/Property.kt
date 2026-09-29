@@ -7,61 +7,61 @@ import java.util.UUID
 
 @Entity
 @Table(name = "property")
-open class Property(
+class Property(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    open var id: UUID? = null,
+    var id: UUID? = null,
 
     @Column(name = "real_estate_agency_id", nullable = false)
-    open var realEstateAgencyId: UUID? = null,
+    var realEstateAgencyId: UUID? = null,
 
     @Column(name = "title", nullable = false)
-    open var title: String? = null,
+    var title: String? = null,
 
     @Column(name = "description")
-    open var description: String? = null,
+    var description: String? = null,
 
     @Column(name = "price", precision = 12, scale = 2)
-    open var price: BigDecimal? = null,
+    var price: BigDecimal? = null,
 
     @Column(name = "property_type")
-    open var propertyType: String? = null,
+    var propertyType: String? = null,
 
     @Column(name = "bedrooms")
-    open var bedrooms: Int? = null,
+    var bedrooms: Int? = null,
 
     @Column(name = "bathrooms")
-    open var bathrooms: Int? = null,
+    var bathrooms: Int? = null,
 
     @Column(name = "area_sqm", precision = 10, scale = 2)
-    open var areaSqm: BigDecimal? = null,
+    var areaSqm: BigDecimal? = null,
 
     @Column(name = "address")
-    open var address: String? = null,
+    var address: String? = null,
 
     @Column(name = "city")
-    open var city: String? = null,
+    var city: String? = null,
 
     @Column(name = "state")
-    open var state: String? = null,
+    var state: String? = null,
 
     @Column(name = "zip_code")
-    open var zipCode: String? = null,
+    var zipCode: String? = null,
 
     @Column(name = "status", nullable = false)
-    open var status: String? = "available",
+    var status: String? = "available",
 
     @Column(name = "active", nullable = false)
-    open var active: Boolean = true,
+    var active: Boolean = true,
 
     @Column(name = "created_at", updatable = false)
-    open var createdAt: LocalDateTime? = null,
+    var createdAt: LocalDateTime? = null,
 
     @Column(name = "updated_at")
-    open var updatedAt: LocalDateTime? = null
+    var updatedAt: LocalDateTime? = null
 ) {
     @OneToMany(mappedBy = "property", fetch = FetchType.LAZY)
-    open var activities: MutableList<Activity> = mutableListOf()
+    var activities: MutableList<Activity> = mutableListOf()
 
     @PrePersist
     fun prePersist() {

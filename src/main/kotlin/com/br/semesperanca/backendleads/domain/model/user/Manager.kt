@@ -6,7 +6,7 @@ import jakarta.persistence.Table
 
 @Entity
 @Table(name = "manager")
-open class Manager(
+class Manager(
     @Column(name = "branch_office")
-    open var branchOffice: String? = null
+    var branchOffice: String? = null
 ) : User()

@@ -6,31 +6,31 @@ import java.util.UUID
 
 @Entity
 @Table(name = "branch_owner")
-open class BranchOwner(
+class BranchOwner(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    open var id: UUID? = null,
+    var id: UUID? = null,
 
     @Column(name = "real_estate_agency_id", nullable = false)
-    open var realEstateAgencyId: UUID? = null,
+    var realEstateAgencyId: UUID? = null,
 
     @Column(name = "name", nullable = false)
-    open var name: String? = null,
+    var name: String? = null,
 
     @Column(name = "email")
-    open var email: String? = null,
+    var email: String? = null,
 
     @Column(name = "phone")
-    open var phone: String? = null,
+    var phone: String? = null,
 
     @Column(name = "active", nullable = false)
-    open var active: Boolean = true,
+    var active: Boolean = true,
 
     @Column(name = "created_at", updatable = false)
-    open var createdAt: LocalDateTime? = null,
+    var createdAt: LocalDateTime? = null,
 
     @Column(name = "updated_at")
-    open var updatedAt: LocalDateTime? = null
+    var updatedAt: LocalDateTime? = null
 ) {
     @PrePersist
     fun prePersist() {

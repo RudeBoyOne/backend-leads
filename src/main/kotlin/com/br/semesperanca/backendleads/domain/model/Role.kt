@@ -10,11 +10,11 @@ import java.util.UUID
 
 @Entity
 @Table(name = "role")
-open class Role(
+class Role(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    open var id: UUID? = null,
+    var id: UUID? = null,
 
     @Column(name = "name", nullable = false, unique = true)
-    open var name: String? = null
+    var name: String? = null
 )
