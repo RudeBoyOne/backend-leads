@@ -24,9 +24,10 @@ java {
 
 // all-open PURO: abre classe e membros anotados, sem gerar construtor vazio.
 // NUNCA usar kotlin("plugin.jpa") aqui — ele tambem habilita o compilador noarg,
-// que mudaria a estrategia de persistencia do Hibernate: as entities ficariam com
-// construtor no-arg e o Hibernate 7 passaria a instanciar por ele, em vez do
-// construtor canonico (Activity.lead nao tem valor default).
+// que mudaria a estrategia de persistencia do Hibernate: TODAS as entities
+// ficariam com construtor no-arg e o Hibernate 7 passaria a instanciar por ele,
+// em vez do construtor canonico. O no-arg que a Activity precisa para as
+// coleções LAZY vem do valor default do proprio parametro `lead`, na mao.
 //
 // As stereotypes do Spring sao declaradas uma a uma em vez do preset
 // kotlin("plugin.spring") para manter o build independente do plugin do Spring

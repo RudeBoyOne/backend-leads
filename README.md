@@ -125,9 +125,11 @@ lazy classes cannot be final`, e em Kotlin `open class` sozinho não abriria os 
 `var`: seria preciso marcar cada propriedade, e esquecer uma passaria despercebida até a primeira
 navegação lazy.
 
-O `all-open` é configurado sem o plugin `noarg` de propósito. `Activity.lead` não tem valor padrão,
-então as entidades dependem do construtor canônico, e um construtor vazio gerado automaticamente
-mudaria a estratégia de instanciação do Hibernate.
+O `all-open` é configurado sem o plugin `noarg` de propósito: um construtor vazio gerado para
+**todas** as entidades mudaria a estratégia de instanciação do Hibernate 7, que passaria a usá-lo
+no lugar do construtor canônico. Só a `Activity` precisa de no-arg — o das coleções LAZY — e ela o
+tém porque `Activity.lead` é `Lead? = null`, com valor padrão declarado na mão. O `NOT NULL` continua
+sendo do banco (`optional = false` e `@JoinColumn(nullable = false)`).
 
 **Herança de usuários.** `User` é abstrata, com `InheritanceType.JOINED`, e concentra o que é comum
 a qualquer usuário. `Manager` acrescenta `branch_office` e `RealEstateAgent` acrescenta `creci`,
@@ -158,11 +160,15 @@ PostgreSQL 16, gerenciado por Flyway. As migrations criam `role`, `plan`, `real_
 `property` (V009) e `branch_owner` (V010).
 
 A V006 instala os triggers de `updated_at`, e a V007 faz o seed da agency "Sistema" com dois
-`FULL_ADMIN`. As V011 a V013 ajustam `activity`, `property` e `branch_owner`.
+`FULL_ADMIN`. As V011 a V013 ajustam `activity`, `property` e `branch_owner`, e a V014 põe o
+`UNIQUE` que faltava em `real_estate_agent.creci`.
+
+A V007 tem um espaço antes do `.sql` no nome. É bug de digitação no histórico: Flyway aplica
+normalmente e renomear quebraria o checksum de quem já rodou. Não "consertar".
 
 ## Testes
 
-**440 testes em 68 classes, 99,9% de cobertura de linha** — e o build falha se cair abaixo de 90%.
+**448 testes em 68 classes, 99,9% de cobertura de linha** — e o build falha se cair abaixo de 90%.
 O `./gradlew test` sobe tudo sozinho: só precisa de Docker.
 
 ```bash
@@ -205,11 +211,11 @@ de **90% de linha**:
 
 | Métrica | Cobertura |
 | --- | --- |
-| Linha | 99,9% (1347/1349) |
-| Instrução | 98,5% |
-| Ramo | 94,6% |
-| Complexidade | 95,3% |
-| Método | 96,5% |
+| Linha | 99,9% (1364/1366) |
+| Instrução | 98,7% |
+| Ramo | 94,4% |
+| Complexidade | 95,5% |
+| Método | 96,9% |
 | Classe | 98,5% |
 
 Quatorze dos quinze pacotes estão em 100% de linha. A única exceção é o `main` de
@@ -217,27 +223,36 @@ Quatorze dos quinze pacotes estão em 100% de linha. A única exceção é o `ma
 segundo contexto completo com um `DataSource` vivo, e ele não tem nenhuma linha própria para
 verificar. Todas as classes e repositórios do domínio estão cobertos.
 
-### Bugs encontrados e fixados em teste
+### Bugs encontrados pela suíte
 
-A suíte não só mede cobertura — ela encontrou defeitos reais, que estão fixados em testes que
-documentam o problema em vez de escondê-lo. A maioria está anotada no próprio teste:
+A suíte não só mede cobertura — ela encontrou seis defeitos reais no código de produção. Todos
+foram corrigidos, cada um com o teste invertido no mesmo commit, e o motivo de cada um está
+anotado no próprio teste:
 
-- `AuthController.login` e `createFullAdmin` não têm `@Valid` no `@RequestBody`, então payload
-  inválido volta com 200/201 em vez de 400.
-- Rota inexistente devolve **500** em vez de 404: o `GlobalExceptionHandler` não estende
-  `ResponseEntityExceptionHandler` e engole o `NoResourceFoundException` no
-  `@ExceptionHandler(Exception::class)`.
-- `Lead` não tem `@PrePersist`, e `lead.created_at`/`updated_at` são `NOT NULL DEFAULT NOW()`: o
-  Hibernate sempre manda a coluna, anulando o default, então um `save` de `Lead` cru estoura
-  `DataIntegrityViolationException`.
-- `real_estate_agent.creci` é `unique = true` na entidade mas o `V002` criou a coluna sem `UNIQUE`, e
-  `ddl-auto: validate` não checa constraint — dois corretores podem ficar com o mesmo CRECI. A
-  única barreira é o `existsByCreci` do serviço, que é checagem de aplicação e corre em corrida.
-- `Lead.activities` não pode ser carregada: `Activity` não tem construtor no-arg (o parâmetro
-  `lead` não tem default, então o Kotlin não gera o sintético), e a coleção passa pelo
-  `CollectionLoaderSingleKey`, que precisa instanciar a entidade pela chave. Nenhum serviço usa a
-  coleção — `ActivityService` filtra por `Specification` — então o defeito está latente.
-- `ROLE_null`: um `User` sem papel vira a autoridade `"ROLE_null"`. Feio e inofensivo, mas fixado.
+- **`@Valid` ausente** em `AuthController.login` e `createFullAdmin`: as constraints dos DTOs
+  existiam e nunca eram avaliadas, então payload inválido voltava com 200/201. O `full-admin` era o
+  pior caso — persistia a conta com senha de um caractere. `changePassword` já usava `@Valid`.
+- **Rota inexistente devolvia 500** em vez de 404: o `@ExceptionHandler(Exception::class)` do
+  `GlobalExceptionHandler` engolia o `NoResourceFoundException` do Spring 7. Resolvido com handler
+  específico do tipo, sem estender `ResponseEntityExceptionHandler` — estender trocaria o corpo de
+  todos os erros MVC por `application/problem+json` e quebraria o contrato de JSON da API.
+- **`Lead` sem `@PrePersist`**: `lead.created_at`/`updated_at` são `NOT NULL DEFAULT NOW()`, e o
+  Hibernate sempre manda a coluna, anulando o default — um `save` de `Lead` cru estourava
+  `DataIntegrityViolationException`. `Lead` era a única entidade sem callback de ciclo de vida, e
+  não há trigger de `updated_at` em `lead`, o que torna o `@PreUpdate` necessário.
+- **`real_estate_agent.creci` sem `UNIQUE`**: a entidade declara `unique = true` e o `V002` criou a
+  coluna solta, e `ddl-auto: validate` nunca checa constraint. A única barreira era o
+  `existsByCreci` do serviço, que é checagem de aplicação e corre em corrida. Fechado na V014; o
+  `NOT NULL` que a entidade também declara ficou de fora, porque a coluna pode ter `NULL` em base
+  já populada.
+- **`Lead.activities` e `Property.activities` não carregavam**: `Activity` não tinha construtor
+  no-arg (o parâmetro `lead` não tinha default, então o Kotlin não emitia o sintético), e a coleção
+  passa pelo `CollectionLoaderSingleKey`, que precisa instanciar a entidade só com a chave. O
+  conserto foi `Activity.lead` virar `Lead? = null`, mantendo `optional = false` e o `NOT NULL` do
+  banco.
+- **`ROLE_null`**: um `User` sem papel virava a autoridade `"ROLE_null"`, que nunca casa com
+  nenhuma regra de `hasRole` e ainda vaza no log de auditoria. Agora a lista sai vazia, igual à
+  `CustomJwtAuthenticationConverter` fazia no outro caminho de autenticação.
 
 ### Armadilhas conhecidas da suíte
 
