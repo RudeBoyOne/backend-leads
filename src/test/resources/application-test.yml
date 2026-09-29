@@ -1,0 +1,44 @@
+# Profile de teste. Ativado por @ActiveProfiles("test").
+#
+# O application.yml principal interpola ${DB_URL}, ${JWT_SECRET}, etc. Sem estas
+# chaves o contexto nem sobe. O Spring Boot achata os perfis de teste no mesmo
+# Environment, entao declarar a chave AQUI mesmo resolve o placeholder do
+# documento principal — nao ha variavel de ambiente a exportar.
+DB_URL: localhost:5432
+DB_NAME: backend_leads_test
+DB_USER: test
+DB_PASSWORD: test
+MAIL_USERNAME: test@example.com
+MAIL_PASSWORD: test
+# 32 bytes em Base64 — HS256 exige no minimo 256 bits.
+JWT_SECRET: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET: test-client-secret
+OAUTH2_ISSUER_URI: https://accounts.google.com
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # `application.yml` so define `issuer-uri`, e ai o
+          # `JwtDecoderConfiguration` tenta um GET nos metadados do issuer no
+          # start-up. Informar tambem o `jwk-set-uri` troca esse fluxo pelo
+          # `NimbusJwtDecoder` com a URI direto, sem nenhuma chamada de rede —
+          # o decoder so e construido de verdade quando um teste pedir.
+          jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+  jpa:
+    # Sem ddl-auto o schema vem inteiro das migrations do Flyway, que e o
+    # comportamento de producao. Nos slices @DataJpaTest o Hibernate valida o
+    # mapeamento e falha se alguma entidade nao bater com o banco.
+    hibernate:
+      ddl-auto: validate
+
+logging:
+  level:
+    root: WARN
+    com.br.semesperanca.backendleads: INFO
+    # O application.yml de producao deixa em DEBUG; aqui o ganho e zero e o
+    # custo e um log de varios miles de linhas por execucao.
+    org.springframework.security: INFO
+    org.springframework.test: WARN
