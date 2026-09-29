@@ -162,12 +162,112 @@ A V006 instala os triggers de `updated_at`, e a V007 faz o seed da agency "Siste
 
 ## Testes
 
-Existe um único teste, `BackendLeadsApplicationTests`, que só carrega o contexto da aplicação. Ele
-precisa de um PostgreSQL no ar — não há Testcontainers nem perfil H2.
+**440 testes em 68 classes, 99,9% de cobertura de linha** — e o build falha se cair abaixo de 90%.
+O `./gradlew test` sobe tudo sozinho: só precisa de Docker.
 
-Um detalhe que costuma frustrar: o serviço `postgres` do compose não publica a porta 5432, então
-`./gradlew test` rodando na máquina só conecta se o `DB_URL` apontar para um Postgres alcançável. O
-`DB_URL=postgres:5432` do `.env` serve ao container da aplicação, não ao test na host.
+```bash
+./gradlew test                                  # roda tudo
+./gradlew build                                 # inclui a verificação de cobertura
+./gradlew test jacocoTestReport                 # relatório em build/reports/jacoco/test/html
+./gradlew test --tests '*LeadRepositoryTest'    # só uma classe
+```
+
+### Como os testes se dividem
+
+| Tipo | Quantos | O que exercita |
+| --- | --- | --- |
+| Unitário (serviço) | 10 classes | Lógica de negócio com repositório, e-mail e insight mockados. As `Specification` são avaliadas contra um `CriteriaBuilder` instrumentado (`support/SpecProbe.kt`), o que verifica quantos filtros foram montados e com quais valores, sem subir banco. |
+| Slice de controller | 7 classes | Os sete controllers via `@WebMvcTest`, com a camada web real (Jackson 3, validação de bean, `GlobalExceptionHandler`) e serviço mockado. |
+| Repositório | 8 classes | `@DataJpaTest` contra o PostgreSQL de verdade: as 13 migrations do Flyway rodam e o `ddl-auto: validate` garante que o mapeamento bate com o schema. Cobre as queries derivadas, a composição de `Specification`, paginação e as constraints do banco. |
+| Integração | 2 classes | Contexto completo: sobe a aplicação inteira e a matriz de segurança (401/403/público) com JWT assinado de verdade. |
+| Entidade e DTO | 2 classes | Callbacks `@PrePersist`/`@PreUpdate`, o contrato de `UserDetails` e o `LeadDTO.toLead`/`fromLead`. |
+
+### Banco de teste
+
+O PostgreSQL vem do Testcontainers, não do `docker-compose.yml`. Isso não é preferência: o serviço
+`postgres` do compose **não publica a porta 5432**, então um `DB_URL=postgres:5432` do `.env` — que
+serve ao container da aplicação — não é alcançável de dentro do container de teste.
+
+Há um container só para a suíte inteira, em `support/AbstractPostgresTest.kt`, compartilhado entre
+os testes de repositório e os de contexto completo. Ele é iniciado à mão, sem `@Testcontainers`:
+com a instância compartilhada, o `afterAll` da primeira classe de teste mataria o banco das
+seguintes.
+
+O `src/test/resources/application-test.yml` (perfil `test`) resolve os placeholders que o
+`application.yml` interpola — `DB_*`, `JWT_SECRET`, `GOOGLE_*`, `MAIL_*` — sem nenhuma variável de
+ambiente. Ele também define `spring.security.oauth2.resourceserver.jwt.jwk-set-uri`, que é o que
+impede o `JwtDecoder` de fazer um GET nos metadados do Google no start-up.
+
+### Cobertura
+
+O JaCoCo roda em todo `./gradlew build` e o `jacocoTestCoverageVerification` derruba o build abaixo
+de **90% de linha**:
+
+| Métrica | Cobertura |
+| --- | --- |
+| Linha | 99,9% (1347/1349) |
+| Instrução | 98,5% |
+| Ramo | 94,6% |
+| Complexidade | 95,3% |
+| Método | 96,5% |
+| Classe | 98,5% |
+
+Quatorze dos quinze pacotes estão em 100% de linha. A única exceção é o `main` de
+`BackendLeadsApplication` (duas linhas), deixado de fora de propósito: exercitá-lo exigiria um
+segundo contexto completo com um `DataSource` vivo, e ele não tem nenhuma linha própria para
+verificar. Todas as classes e repositórios do domínio estão cobertos.
+
+### Bugs encontrados e fixados em teste
+
+A suíte não só mede cobertura — ela encontrou defeitos reais, que estão fixados em testes que
+documentam o problema em vez de escondê-lo. A maioria está anotada no próprio teste:
+
+- `AuthController.login` e `createFullAdmin` não têm `@Valid` no `@RequestBody`, então payload
+  inválido volta com 200/201 em vez de 400.
+- Rota inexistente devolve **500** em vez de 404: o `GlobalExceptionHandler` não estende
+  `ResponseEntityExceptionHandler` e engole o `NoResourceFoundException` no
+  `@ExceptionHandler(Exception::class)`.
+- `Lead` não tem `@PrePersist`, e `lead.created_at`/`updated_at` são `NOT NULL DEFAULT NOW()`: o
+  Hibernate sempre manda a coluna, anulando o default, então um `save` de `Lead` cru estoura
+  `DataIntegrityViolationException`.
+- `real_estate_agent.creci` é `unique = true` na entidade mas o `V002` criou a coluna sem `UNIQUE`, e
+  `ddl-auto: validate` não checa constraint — dois corretores podem ficar com o mesmo CRECI. A
+  única barreira é o `existsByCreci` do serviço, que é checagem de aplicação e corre em corrida.
+- `Lead.activities` não pode ser carregada: `Activity` não tem construtor no-arg (o parâmetro
+  `lead` não tem default, então o Kotlin não gera o sintético), e a coleção passa pelo
+  `CollectionLoaderSingleKey`, que precisa instanciar a entidade pela chave. Nenhum serviço usa a
+  coleção — `ActivityService` filtra por `Specification` — então o defeito está latente.
+- `ROLE_null`: um `User` sem papel vira a autoridade `"ROLE_null"`. Feio e inofensivo, mas fixado.
+
+### Armadilhas conhecidas da suíte
+
+Coisas que quebram de formas não óbvias e que valem saber antes de escrever o próximo teste:
+
+- **Não dá para meta-anotar o setup de slice.** `@WebMvcTest` já é meta-anotado com
+  `@AutoConfigureMockMvc`, e o bootstrapper converte os atributos da anotação em *inlined
+  properties*, que vencem `@TestPropertySource` e `application*.yml`. Por isso
+  `@AutoConfigureMockMvc(addFilters = false)` vai **direto na classe** de teste: pedir `false` por
+  qualquer um dos outros dois caminhos continua devolvendo 302 para o login do Google.
+- **`@ImportAutoConfiguration(exclude = ...)` não funciona em `@WebMvcTest`.** O recorte injeta o
+  que precisa pelo `ImportsContextCustomizer`, cujo `ImportSelector` ignora exclusões. O que
+  desliga a segurança no slice é o `application-test.yml`.
+- **Com `addFilters = false`, `@AuthenticationPrincipal Jwt` chega nulo.**
+  `SecurityMockMvcRequestPostProcessors.authentication(...)` guarda o contexto num repositório de
+  request que o `SecurityContextHolderFilter` só lê. Daí o `support/JwtPrincipal.kt`, que monta o
+  `Jwt` na mão.
+- **Id preenchido à mão em entidade `@GeneratedValue` quebra o `save`.** O Hibernate trata o objeto
+  como *detached*, o `save` vira `merge` e estoura `ObjectOptimisticLockingFailureException`. Por
+  isso `TestFixtures.role()` e `id = null` nos repositórios.
+- **Ler o campo de uma coleção LAZY não dispara nada.** O `SELECT` só sai na primeira operação que
+  toca os elementos, o que faz um bug de carga preguiçosa passar despercebido num teste.
+- **`Specification` é `(root, query, cb)`.** A ordem é o inverso do `CriteriaBuilder` e o engano
+  compila como "unresolved reference" em `equal`/`like`, não como erro de tipo.
+- **Kotlin importa método estático como função de topo**, então `mvc.get("/x")` não resolve —
+  use `MockMvcRequestBuilders.request(HttpMethod.GET, "/x")`.
+- **Nome de teste em crase não aceita `/` nem `:`.** Custa uma reescrita da função inteira.
+- `any()` do mockito-kotlin é `any<T : Any>()` e não casa com `null`; para parâmetro anulável use
+  `anyOrNull()`.
+- `Jwt.issuer` devolve `URL?`, não `String`.
 
 ## Documentação da API
 
