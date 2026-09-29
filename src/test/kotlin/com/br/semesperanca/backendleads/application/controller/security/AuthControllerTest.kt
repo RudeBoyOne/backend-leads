@@ -76,9 +76,7 @@ class AuthControllerTest : AbstractControllerSlice() {
      * visivel: se alguem adicionar o `@Valid`, ele quebra.
      */
     @Test
-    fun `POST login aceita email invalido porque o request nao tem Valid`() {
-        whenever(authService.login(any())).thenReturn(TestFixtures.loginResponse())
-
+    fun `POST login rejeita email invalido com 400 e devolve mapa de erros de validacao`() {
         mvc
             .post()
             .uri("/auth/login")
@@ -86,9 +84,11 @@ class AuthControllerTest : AbstractControllerSlice() {
             .content("""{"email": "nao-e-email", "password": "123"}""")
             .exchange()
             .assertThat()
-            .hasStatus(200)
+            .hasStatus(400)
+            .matches(jsonEquals("$.message", "Erro de validação"))
+            .matches(jsonNotEmpty("$.fields.email"))
 
-        verify(authService).login(any())
+        verify(authService, never()).login(any())
     }
 
     @Test
@@ -108,9 +108,7 @@ class AuthControllerTest : AbstractControllerSlice() {
     }
 
     @Test
-    fun `POST register full-admin aceita senha curta porque o request nao tem Valid`() {
-        whenever(authService.createFullAdmin(any())).thenReturn(TestFixtures.realEstateAgentResponse())
-
+    fun `POST register full-admin rejeita senha curta com 400 e devolve mapa de erros`() {
         mvc
             .post()
             .uri("/auth/register/full-admin")
@@ -118,9 +116,10 @@ class AuthControllerTest : AbstractControllerSlice() {
             .content("""{"name": "A", "email": "invalido", "password": "123"}""")
             .exchange()
             .assertThat()
-            .hasStatus(201)
+            .hasStatus(400)
+            .matches(jsonNotEmpty("$.fields.password"))
 
-        verify(authService).createFullAdmin(any())
+        verify(authService, never()).createFullAdmin(any())
     }
 
     @Test
