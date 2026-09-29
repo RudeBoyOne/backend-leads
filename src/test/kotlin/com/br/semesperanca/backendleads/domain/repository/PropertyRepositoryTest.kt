@@ -1,5 +1,6 @@
 package com.br.semesperanca.backendleads.domain.repository
 
+import com.br.semesperanca.backendleads.domain.model.Lead
 import com.br.semesperanca.backendleads.domain.model.Property
 import com.br.semesperanca.backendleads.support.AbstractRepositoryTest
 import com.br.semesperanca.backendleads.support.TestFixtures
@@ -23,6 +24,12 @@ class PropertyRepositoryTest : AbstractRepositoryTest() {
     @Autowired
     private lateinit var repository: PropertyRepository
 
+    @Autowired
+    private lateinit var activityRepository: ActivityRepository
+
+    @Autowired
+    private lateinit var leadRepository: LeadRepository
+
     private lateinit var agencyId: UUID
 
     private lateinit var outraAgencyId: UUID
@@ -32,6 +39,14 @@ class PropertyRepositoryTest : AbstractRepositoryTest() {
         agencyId = insertAgency("Imob A")
         outraAgencyId = insertAgency("Imob B")
     }
+
+    /** `Activity.lead` é obrigatório, então todo imóvel com atividade tem um lead por trás. */
+    private fun leadDoTeste(): Lead =
+        leadRepository.saveAndFlush(
+            TestFixtures.lead(id = null, originLeadId = "OL-${UUID.randomUUID()}").apply {
+                realEstateAgencyId = agencyId
+            },
+        )
 
     private fun novo(
         agency: UUID = agencyId,
@@ -77,6 +92,20 @@ class PropertyRepositoryTest : AbstractRepositoryTest() {
     @Test
     fun `findByRealEstateAgencyId de agência sem imóveis devolve lista vazia`() {
         assertThat(repository.findByRealEstateAgencyId(UUID.randomUUID())).isEmpty()
+    }
+
+    @Test
+    fun `a coleção activities do imóvel carrega as atividades dele`() {
+        val imovel = repository.saveAndFlush(novo(title = "Apto com atividade"))
+        activityRepository.save(
+            TestFixtures.activity(id = null, lead = leadDoTeste(), property = imovel, title = "Visita tecnica", createdAt = null),
+        )
+        activityRepository.flush()
+        entityManager.clear()
+
+        val relido = entityManager.find(Property::class.java, imovel.id!!)
+
+        assertThat(relido.activities.map { it.title }).containsExactly("Visita tecnica")
     }
 
     @Test

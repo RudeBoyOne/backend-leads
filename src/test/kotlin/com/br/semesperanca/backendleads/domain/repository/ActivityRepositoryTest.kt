@@ -5,8 +5,6 @@ import com.br.semesperanca.backendleads.domain.model.Lead
 import com.br.semesperanca.backendleads.support.AbstractRepositoryTest
 import com.br.semesperanca.backendleads.support.TestFixtures
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.hibernate.InstantiationException
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -75,7 +73,7 @@ class ActivityRepositoryTest : AbstractRepositoryTest() {
         val saved = repository.save(nova(property = imovel))
 
         val relida = repository.findById(saved.id!!).get()
-        assertThat(relida.lead.id).isEqualTo(lead.id)
+        assertThat(relida.lead?.id).isEqualTo(lead.id)
         assertThat(relida.property?.id).isEqualTo(imovel.id)
     }
 
@@ -89,28 +87,23 @@ class ActivityRepositoryTest : AbstractRepositoryTest() {
     }
 
     /**
-     * Bug latente, e o motivo de `Lead.activities` não poder ser usada.
-     *
-     * `Activity` não tem construtor no-arg: o parâmetro `lead: Lead` não tem
-     * valor default, então o Kotlin não gera o no-arg sintético que o `Lead`
-     * ganha (todos os parâmetros dele têm default). Inicializar a coleção
-     * `activities` passa pelo `CollectionLoaderSingleKey`, que precisa
-     * instanciar uma `Activity` só com a chave antes do `SELECT` — e sem no-arg
-     * isso estoura `InstantiationException`.
+     * `Lead.activities` e `Property.activities` são coleções LAZY, e o
+     * `CollectionLoaderSingleKey` precisa instanciar a `Activity` só com a
+     * chave antes do `SELECT` — o que exige o construtor no-arg que o Kotlin
+     * só emite quando todo parâmetro do construtor primário tem default.
      *
      * Detalhe que confunde na leitura do código: ler o campo `activities` não
      * estoura nada, devolve o `PersistentBag` vazio. Só a primeira operação que
-     * toca os elementos dispara o `SELECT` — por isso o `.size` dentro do
-     * `assertThatThrownBy` e não a leitura crua.
+     * toca os elementos dispara o `SELECT` — daí o `.size`.
      *
-     * Nada no serviço usa essa coleção: `ActivityService` filtra por
-     * `Specification`, nunca por `lead.activities`. O conserto seria o
-     * `kotlin("plugin.jpa")`, que o `build.gradle.kts` proíbe de propósito
-     * (linha 26) porque ele também força `allOpen` em tudo que tem `@Entity`.
-     * Fica registrado, não corrigido.
+     * A correção foi dar default ao `lead` (`Lead?`) sem abrir mão do
+     * `optional = false` e do `NOT NULL` do banco. Não foi o
+     * `kotlin("plugin.jpa")`: ele força `allOpen` e muda a estratégia de
+     * instanciação do Hibernate 7, que é o que se quer evitar aqui
+     * (ver `build.gradle.kts`).
      */
     @Test
-    fun `a coleção activities do lead não pode ser carregada porque Activity não tem construtor no-arg`() {
+    fun `a coleção activities do lead carrega as atividades do lead`() {
         repository.save(nova(title = "Minha 1"))
         repository.save(nova(title = "Minha 2"))
         entityManager.flush()
@@ -118,9 +111,7 @@ class ActivityRepositoryTest : AbstractRepositoryTest() {
 
         val relido = entityManager.find(Lead::class.java, lead.id!!)
 
-        assertThatThrownBy { relido.activities.size }
-            .isInstanceOf(InstantiationException::class.java)
-            .hasMessageContaining("No default constructor")
+        assertThat(relido.activities.map { it.title }).containsExactlyInAnyOrder("Minha 1", "Minha 2")
     }
 
     /**

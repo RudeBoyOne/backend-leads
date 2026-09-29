@@ -28,6 +28,9 @@ class LeadRepositoryTest : AbstractRepositoryTest() {
     @Autowired
     private lateinit var repository: LeadRepository
 
+    @Autowired
+    private lateinit var activityRepository: ActivityRepository
+
     private lateinit var agencyId: UUID
 
     @BeforeEach
@@ -119,6 +122,18 @@ class LeadRepositoryTest : AbstractRepositoryTest() {
         val relido = repository.findByOriginLeadId("OL-update").get()
         assertThat(relido.createdAt).isEqualTo(criado)
         assertThat(relido.updatedAt).isAfter(Instant.parse("2020-01-01T00:00:00Z"))
+    }
+
+    @Test
+    fun `a coleção activities do lead carrega as atividades dele`() {
+        val lead = repository.saveAndFlush(novo(originLeadId = "OL-com-atividades"))
+        activityRepository.save(TestFixtures.activity(id = null, lead = lead, title = "Visita tecnica", createdAt = null))
+        activityRepository.flush()
+        entityManager.clear()
+
+        val relido = entityManager.find(Lead::class.java, lead.id!!)
+
+        assertThat(relido.activities.map { it.title }).containsExactly("Visita tecnica")
     }
 
     @Test
