@@ -164,26 +164,22 @@ class UserRepositoryTest : AbstractRepositoryTest() {
     }
 
     /**
-     * Bug de schema, não de teste. A entidade declara
-     * `@Column(creci, nullable = false, unique = true)`, mas o `V002` cria a
-     * coluna como `VARCHAR(30)` **sem** `UNIQUE` — e `ddl-auto: validate` só
-     * confere existência e tipo de coluna, nunca constraint. Então dois
-     * corretores podem acabar com o mesmo CREVI no banco.
-     *
-     * A única barreira é o `existsByCreci` do `RealEstateAgentService.create`,
-     * que é uma checagem de aplicação: duas requisições simultâneas passam
-     * juntas. Fica registrado aqui, não corrigido, porque mexer em migration
-     * num schema já em produção é decisão de quem mantém o banco.
+     * Espelho do teste de e-mail logo acima, para o `creci`. A entidade declara
+     * `@Column(creci, nullable = false, unique = true)`, o `V002` criou a coluna
+     * como `VARCHAR(30)` solta, e o `V014` fecha a lacuna — `ddl-auto: validate`
+     * só confere existência e tipo de coluna, nunca constraint, então sem
+     * migration dois corretores ficavam com o mesmo CRECI. A única barreira era
+     * o `existsByCreci` do `RealEstateAgentService.create`, que é checagem de
+     * aplicação e corre em corrida entre o check e o insert.
      */
     @Test
-    fun `creci repetido é aceito porque o V002 não criou a constraint UNIQUE`() {
+    fun `creci duplicado é recusado pela constraint UNIQUE`() {
         val creci = "CRECI-${UUID.randomUUID().toString().take(8)}"
-        repository.saveAndFlush(agente(creci = creci))
+        repository.saveAndFlush(agente(email = "a-$creci@example.com", creci = creci))
 
-        val segundo = repository.saveAndFlush(agente(creci = creci))
-
-        assertThat(agentRepository.findAll().count { it.creci == creci }).isEqualTo(2)
-        assertThat(segundo.id).isNotNull()
+        org.assertj.core.api.Assertions
+            .assertThatThrownBy { repository.saveAndFlush(agente(email = "b-$creci@example.com", creci = creci)) }
+            .isInstanceOf(org.springframework.dao.DataIntegrityViolationException::class.java)
     }
 
     @Test
