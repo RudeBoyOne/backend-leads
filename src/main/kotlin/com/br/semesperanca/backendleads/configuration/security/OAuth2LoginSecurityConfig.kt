@@ -21,9 +21,8 @@ class OAuth2LoginSecurityConfig(
     private val customJwtAuthenticationConverter: CustomJwtAuthenticationConverter,
     private val oAuth2SuccessHandler: OAuth2SuccessHandler,
     private val customAuthenticationEntryPoint: CustomAuthenticationEntryPoint,
-    private val customAccessDeniedHandler: CustomAccessDeniedHandler
+    private val customAccessDeniedHandler: CustomAccessDeniedHandler,
 ) {
-
     /**
      * Chain do fluxo OAuth2 (browser): apenas os endpoints do login social.
      * Matcher estreito — nao participa da protecao das rotas da aplicacao.
@@ -32,7 +31,8 @@ class OAuth2LoginSecurityConfig(
     @Order(1)
     @Throws(Exception::class)
     fun oauth2FilterChain(http: HttpSecurity): SecurityFilterChain {
-        http.securityMatcher("/oauth2/**", "/login/**", "/error")
+        http
+            .securityMatcher("/oauth2/**", "/login/**", "/error")
             .authorizeHttpRequests { auth -> auth.anyRequest().permitAll() }
             .oauth2Login { oauth -> oauth.successHandler(oAuth2SuccessHandler) }
 
@@ -47,13 +47,19 @@ class OAuth2LoginSecurityConfig(
     @Order(2)
     @Throws(Exception::class)
     fun apiFilterChain(http: HttpSecurity): SecurityFilterChain {
-        http.cors(Customizer.withDefaults())
+        http
+            .cors(Customizer.withDefaults())
             .csrf { csrf -> csrf.disable() }
             .authorizeHttpRequests { auth ->
-                auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                    .requestMatchers("/actuator/health/**").permitAll()
-                    .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
+                auth
+                    .requestMatchers(HttpMethod.OPTIONS, "/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/auth/login")
+                    .permitAll()
+                    .requestMatchers("/actuator/health/**")
+                    .permitAll()
+                    .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/error")
+                    .permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/register/full-admin")
                     .hasAnyRole("FULL_ADMIN")
                     .requestMatchers(HttpMethod.GET, "/real-estate-agents")
@@ -74,6 +80,8 @@ class OAuth2LoginSecurityConfig(
                     .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
                     .requestMatchers(HttpMethod.PUT, "/managers/{id}")
                     .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
+                    .requestMatchers(HttpMethod.PUT, "/leads/{id}")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER", "REAL_ESTATE_AGENT")
                     .requestMatchers(HttpMethod.PATCH, "/managers/{id}/toggle-active")
                     .hasAnyRole("FULL_ADMIN", "ADMIN")
                     .requestMatchers(HttpMethod.PATCH, "/real-estate-agents/{id}/reset-password")
@@ -86,17 +94,16 @@ class OAuth2LoginSecurityConfig(
                     .hasAnyRole("FULL_ADMIN", "ADMIN")
                     .requestMatchers(HttpMethod.PATCH, "/auth/change-password")
                     .hasAnyRole("FULL_ADMIN", "ADMIN", "REAL_ESTATE_AGENT", "MANAGER")
-                    .anyRequest().authenticated()
-            }
-            .oauth2ResourceServer { oauth2 ->
+                    .anyRequest()
+                    .authenticated()
+            }.oauth2ResourceServer { oauth2 ->
                 oauth2
                     .jwt { jwt ->
-                        jwt.decoder(customJwtDecoder)
+                        jwt
+                            .decoder(customJwtDecoder)
                             .jwtAuthenticationConverter(customJwtAuthenticationConverter)
-                    }
-                    .authenticationEntryPoint(customAuthenticationEntryPoint)
-            }
-            .exceptionHandling { ex -> ex.accessDeniedHandler(customAccessDeniedHandler) }
+                    }.authenticationEntryPoint(customAuthenticationEntryPoint)
+            }.exceptionHandling { ex -> ex.accessDeniedHandler(customAccessDeniedHandler) }
 
         return http.build()
     }

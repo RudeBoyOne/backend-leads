@@ -2,6 +2,7 @@ package com.br.semesperanca.backendleads.domain.service
 
 import com.br.semesperanca.backendleads.application.model.LeadDTO
 import com.br.semesperanca.backendleads.application.model.LeadReceivedNotificationDTO
+import com.br.semesperanca.backendleads.application.model.request.UpdateLeadRequest
 import com.br.semesperanca.backendleads.configuration.MailProperties
 import com.br.semesperanca.backendleads.domain.model.Lead
 import com.br.semesperanca.backendleads.domain.repository.LeadRepository
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.util.UUID
 
 @Service
@@ -17,7 +19,7 @@ class LeadService(
     private val leadRepository: LeadRepository,
     private val emailService: EmailService,
     private val mailProperties: MailProperties,
-    private val insightClient: InsightClient
+    private val insightClient: InsightClient,
 ) {
     fun receiveLead(receivedNotificationDTO: LeadReceivedNotificationDTO) {
         emailService.sendLeadReceived(receivedNotificationDTO, mailProperties.notifyTo ?: "")
@@ -29,7 +31,7 @@ class LeadService(
         corretorId: Long?,
         origin: String?,
         search: String?,
-        pageable: Pageable
+        pageable: Pageable,
     ): Page<Lead> {
         var spec: Specification<Lead> = Specification { _, _, cb -> cb.conjunction() }
 
@@ -44,12 +46,13 @@ class LeadService(
         }
         if (search != null) {
             val pattern = "%" + search.lowercase() + "%"
-            spec = spec.and { root, _, cb ->
-                cb.or(
-                    cb.like(cb.lower(root.get<String>("name")), pattern),
-                    cb.like(cb.lower(root.get<String>("email")), pattern)
-                )
-            }
+            spec =
+                spec.and { root, _, cb ->
+                    cb.or(
+                        cb.like(cb.lower(root.get<String>("name")), pattern),
+                        cb.like(cb.lower(root.get<String>("email")), pattern),
+                    )
+                }
         }
 
         return leadRepository.findAll(spec, pageable)
@@ -61,15 +64,40 @@ class LeadService(
         }
 
         return LeadDTO.fromLead(
-            leadRepository.findById(id)
-                .orElseThrow { IllegalArgumentException("this id dont exist") }
+            leadRepository
+                .findById(id)
+                .orElseThrow { IllegalArgumentException("this id dont exist") },
         )
     }
 
     @Transactional
     fun delete(id: UUID) {
-        val lead = leadRepository.findById(id)
-            .orElseThrow { RuntimeException("Lead não encontrado") }
+        val lead =
+            leadRepository
+                .findById(id)
+                .orElseThrow { RuntimeException("Lead não encontrado") }
         leadRepository.delete(lead)
+    }
+
+    @Transactional
+    fun update(
+        id: UUID,
+        request: UpdateLeadRequest,
+    ): LeadDTO {
+        val lead = leadRepository.findById(id).orElseThrow { IllegalArgumentException("this id dont exist") }
+
+        request.name?.let { lead.name = it }
+        request.email?.let { lead.email = it }
+        request.phoneNumber?.let { lead.phoneNumber = it }
+        request.message?.let { lead.message = it }
+        request.temperature?.let { lead.temperature = it }
+        request.transactionType?.let { lead.transactionType = it }
+        request.source?.let { lead.source = it }
+        request.status?.let { lead.status = it }
+        request.realEstateAgentId?.let { lead.realEstateAgentId = it }
+        request.funnelStageId?.let { lead.funnelStageId = it }
+        lead.updatedAt = Instant.now()
+
+        return LeadDTO.fromLead(leadRepository.save(lead))
     }
 }
