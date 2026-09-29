@@ -36,15 +36,14 @@ class LeadRepositoryTest : AbstractRepositoryTest() {
     }
 
     /**
-     * `lead.created_at` e `lead.updated_at` são `NOT NULL DEFAULT NOW()`, mas o
-     * `Lead` não tem `@PrePersist` nenhum — e o Hibernate sempre manda a coluna
-     * no `INSERT`, mesmo nula, o que anula o `DEFAULT`. Quem grava lead por
-     * JPA precisa preencher os dois na mão.
+     * `lead.created_at` e `lead.updated_at` são `NOT NULL DEFAULT NOW()`, e o
+     * `DEFAULT` só vale quando a coluna é omitida do `INSERT` — o Hibernate
+     * sempre manda toda coluna mapeada, então o default só não é anulado
+     * porque o `Lead` tem `@PrePersist` que preenche os dois.
      *
-     * Nada no serviço faz isso hoje (`receiveLead` só dispara e-mail e insight;
-     * a tabela é alimentada pelo `insights_app`, outro serviço, direto no
-     * Postgres), então é só isso que está registrado: um `save` de `Lead` cru
-     * estoura. O comportamento está fixado no teste logo abaixo.
+     * Além disso, `V006` instala trigger de `updated_at` em `users`,
+     * `real_estate_agent` e `manager`, **não** em `lead` — o `@PreUpdate` é o
+     * que existe por isso.
      */
     private fun novo(
         originLeadId: String = "OL-1",
@@ -77,18 +76,49 @@ class LeadRepositoryTest : AbstractRepositoryTest() {
     }
 
     /**
-     * Fica registrado porque é uma armadilha do schema, não um detalhe do teste:
-     * a coluna tem `DEFAULT NOW()`, então o `INSERT` parece ter tudo certo, mas o
-     * Hibernate sobrescreve o default com o `NULL` do campo. Sem `@PrePersist`
-     * em `Lead`, o `save` estoura `DataIntegrityViolationException`.
+     * Armadilha do schema: a coluna tem `DEFAULT NOW()`, então o `INSERT` parece
+     * ter tudo certo, mas o Hibernate sobrescreve o default com o `NULL` do
+     * campo. Sem `@PrePersist` em `Lead`, o `save` estourava
+     * `DataIntegrityViolationException` — o `@PrePersist` é o que segura isso.
      */
     @Test
-    fun `save com updatedAt nulo estoura porque o Hibernate anula o DEFAULT do banco`() {
+    fun `save com updatedAt nulo preenche o timestamp no prePersist`() {
         val semTimestamp = novo(originLeadId = "OL-sem-data").apply { updatedAt = null }
 
-        assertThatThrownBy { repository.saveAndFlush(semTimestamp) }
-            .isInstanceOf(DataIntegrityViolationException::class.java)
-            .hasMessageContaining("updated_at")
+        val saved = repository.saveAndFlush(semTimestamp)
+
+        assertThat(saved.id).isNotNull()
+        assertThat(saved.updatedAt).isNotNull()
+    }
+
+    @Test
+    fun `prePersist preserva um createdAt que já veio preenchido`() {
+        val ditado = Instant.parse("2020-01-01T00:00:00Z")
+        val lead = novo(originLeadId = "OL-ditado").apply { createdAt = ditado }
+
+        val saved = repository.saveAndFlush(lead)
+
+        assertThat(saved.createdAt).isEqualTo(ditado)
+    }
+
+    /**
+     * `lead` não tem trigger de `updated_at` (o `V006` só cobre `users`,
+     * `real_estate_agent` e `manager`), então o `@PreUpdate` é a única coisa que
+     * atualiza a coluna — sem ele, `updated_at` ficaria para sempre no valor
+     * do `INSERT`.
+     */
+    @Test
+    fun `preUpdate mexe no updatedAt e deixa o createdAt intacto`() {
+        val lead = repository.saveAndFlush(novo(originLeadId = "OL-update"))
+        val criado = lead.createdAt!!
+        lead.updatedAt = Instant.parse("2020-01-01T00:00:00Z")
+        lead.name = "Maria Souza"
+        entityManager.flush()
+        entityManager.clear()
+
+        val relido = repository.findByOriginLeadId("OL-update").get()
+        assertThat(relido.createdAt).isEqualTo(criado)
+        assertThat(relido.updatedAt).isAfter(Instant.parse("2020-01-01T00:00:00Z"))
     }
 
     @Test

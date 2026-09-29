@@ -10,47 +10,43 @@ class Lead(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: UUID? = null,
-
     var realEstateAgencyId: UUID? = null,
-
     var realEstateAgentId: UUID? = null,
-
     var portalId: UUID? = null,
-
     var funnelStageId: UUID? = null,
-
     var originLeadId: String? = null,
-
     var originListingId: String? = null,
-
     var leadOrigin: String? = null,
-
     var clientListingId: String? = null,
-
     var name: String? = null,
-
     var email: String? = null,
-
     var phoneNumber: String? = null,
-
     var message: String? = null,
-
     var temperature: String? = null,
-
     var transactionType: String? = null,
-
     var source: String? = null,
-
     var status: String? = null,
-
     var insightId: String? = null,
-
     var timestamp: Instant? = null,
-
     var createdAt: Instant? = null,
-
-    var updatedAt: Instant? = null
+    var updatedAt: Instant? = null,
 ) {
     @OneToMany(mappedBy = "lead", fetch = FetchType.LAZY)
     var activities: MutableList<Activity> = mutableListOf()
+
+    @PrePersist
+    fun prePersist() {
+        val agora = Instant.now()
+        if (createdAt == null) {
+            createdAt = agora
+        }
+        if (updatedAt == null) {
+            updatedAt = agora
+        }
+    }
+
+    @PreUpdate
+    fun preUpdate() {
+        updatedAt = Instant.now()
+    }
 }

@@ -3,6 +3,7 @@ package com.br.semesperanca.backendleads.domain.model
 import com.br.semesperanca.backendleads.support.TestFixtures
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.time.Instant
 import java.time.LocalDateTime
 
 /**
@@ -12,13 +13,20 @@ import java.time.LocalDateTime
  *
  * - `User` sobrescreve `createdAt` sempre, mesmo num `@PrePersist` de objeto que
  *   ja tinha timestamp;
- * - `Property`, `BranchOwner` e `Activity` so preenchem `createdAt` quando ele
- *   ainda e nulo.
+ * - `Property`, `BranchOwner`, `Activity` e `Lead` so preenchem `createdAt`
+ *   quando ele ainda e nulo.
+ *
+ * `Lead` e a unica entidade com `Instant` no lugar de `LocalDateTime`, porque
+ * a coluna e `TIMESTAMPTZ` — os callbacks usam `Instant.now()` por causa disso.
  */
 class EntityLifecycleTest {
     private val ANTES = LocalDateTime.now().minusSeconds(1)
 
     private val ANTIGO = LocalDateTime.of(2020, 1, 1, 8, 0)
+
+    private val ANTES_INSTANT = Instant.now().minusSeconds(1)
+
+    private val ANTIGO_INSTANT = Instant.parse("2020-01-01T08:00:00Z")
 
     @Test
     fun `User prePersist sobrescreve createdAt mesmo se ja vinher preenchido`() {
@@ -116,5 +124,35 @@ class EntityLifecycleTest {
 
         assertThat(branchOwner.createdAt).isEqualTo(ANTIGO)
         assertThat(branchOwner.updatedAt).isAfter(ANTES)
+    }
+
+    @Test
+    fun `Lead prePersist preserva um createdAt que ja veio preenchido e so completa o updatedAt`() {
+        val lead = TestFixtures.lead(createdAt = ANTIGO_INSTANT)
+
+        lead.prePersist()
+
+        assertThat(lead.createdAt).isEqualTo(ANTIGO_INSTANT)
+        assertThat(lead.updatedAt).isAfter(ANTES_INSTANT)
+    }
+
+    @Test
+    fun `Lead prePersist preenche createdAt e updatedAt quando vem nulo`() {
+        val lead = TestFixtures.lead(createdAt = null).apply { updatedAt = null }
+
+        lead.prePersist()
+
+        assertThat(lead.createdAt).isAfter(ANTES_INSTANT)
+        assertThat(lead.updatedAt).isAfter(ANTES_INSTANT)
+    }
+
+    @Test
+    fun `Lead preUpdate so mexe em updatedAt`() {
+        val lead = TestFixtures.lead(createdAt = ANTIGO_INSTANT).apply { updatedAt = ANTIGO_INSTANT }
+
+        lead.preUpdate()
+
+        assertThat(lead.createdAt).isEqualTo(ANTIGO_INSTANT)
+        assertThat(lead.updatedAt).isAfter(ANTES_INSTANT)
     }
 }
