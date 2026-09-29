@@ -19,14 +19,16 @@ class UserDetailsTest {
     }
 
     /**
-     * Sem papel a autoridade sai `"ROLE_null"`. E feio, mas e o comportamento de
-     * verdade: nenhum filtro compara com esse valor, entao nunca casa.
+     * Sem papel a lista sai vazia, e não com a autoridade literal `"ROLE_null"`,
+     * que nunca casaria com nenhuma regra de `hasRole` e ainda vaza no log de
+     * auditoria como se fosse um papel real. É o mesmo comportamento da
+     * `CustomJwtAuthenticationConverter`, o outro caminho de autenticação.
      */
     @Test
-    fun `usuario sem papel vira a autoridade ROLE_null`() {
+    fun `usuario sem papel nao ganha nenhuma autoridade`() {
         val agent = TestFixtures.bareUser(role = null)
 
-        assertThat(agent.authorities.map { it.authority }).containsExactly("ROLE_null")
+        assertThat(agent.authorities).isEmpty()
     }
 
     @Test

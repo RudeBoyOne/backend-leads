@@ -27,27 +27,20 @@ abstract class User(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     var id: UUID? = null,
-
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
     var role: Role? = null,
-
     @Column(name = "name", nullable = false)
     var name: String? = null,
-
     @Column(name = "email", nullable = false, unique = true)
     var email: String? = null,
-
     @Column(name = "active", nullable = false)
     var isActive: Boolean = true,
-
     @Column(name = "created_at", updatable = false)
     var createdAt: LocalDateTime? = null,
-
     @Column(name = "updated_at")
-    var updatedAt: LocalDateTime? = null
+    var updatedAt: LocalDateTime? = null,
 ) : UserDetails {
-
     @PrePersist
     fun prePersist() {
         createdAt = LocalDateTime.now()
@@ -60,7 +53,7 @@ abstract class User(
     }
 
     override fun getAuthorities(): Collection<GrantedAuthority> =
-        listOf(SimpleGrantedAuthority("ROLE_" + role?.name))
+        role?.name?.let { listOf(SimpleGrantedAuthority("ROLE_$it")) } ?: emptyList()
 
     @Column(name = "password", nullable = false)
     private var pw: String = ""
