@@ -15,12 +15,12 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -32,7 +32,7 @@ import java.util.UUID
 @Tag(name = "Gerentes", description = "Gerenciamento de gerentes")
 class ManagerController(
     private val service: ManagerService,
-    private val authService: AuthService
+    private val authService: AuthService,
 ) {
     @GetMapping
     @Operation(summary = "Listar gerentes", description = "Requer FULL_ADMIN ou ADMIN")
@@ -40,7 +40,7 @@ class ManagerController(
         @RequestParam(required = false) active: Boolean?,
         @RequestParam(required = false) search: String?,
         @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "10") size: Int
+        @RequestParam(defaultValue = "10") size: Int,
     ): ResponseEntity<Page<ManagerResponse>> {
         val pageable: Pageable = PageRequest.of(page, size)
         val filter = UserFilterRequest(active, search)
@@ -49,34 +49,34 @@ class ManagerController(
 
     @PostMapping
     @Operation(summary = "Criar gerente", description = "Requer FULL_ADMIN ou ADMIN")
-    fun create(@RequestBody @Valid request: CreateManagerRequest): ResponseEntity<ManagerResponse> {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request))
-    }
+    fun create(
+        @RequestBody @Valid request: CreateManagerRequest,
+    ): ResponseEntity<ManagerResponse> = ResponseEntity.status(HttpStatus.CREATED).body(service.create(request))
 
     @GetMapping("/{id}")
     @Operation(summary = "Buscar gerente por ID")
-    fun findById(@PathVariable id: UUID): ResponseEntity<ManagerResponse> {
-        return ResponseEntity.ok(service.findById(id))
-    }
+    fun findById(
+        @PathVariable id: UUID,
+    ): ResponseEntity<ManagerResponse> = ResponseEntity.ok(service.findById(id))
 
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar gerente")
     fun update(
         @PathVariable id: UUID,
-        @RequestBody @Valid request: UpdateManagerRequest
-    ): ResponseEntity<ManagerResponse> {
-        return ResponseEntity.ok(service.update(id, request))
-    }
+        @RequestBody @Valid request: UpdateManagerRequest,
+    ): ResponseEntity<ManagerResponse> = ResponseEntity.ok(service.update(id, request))
 
     @PatchMapping("/{id}/toggle-active")
     @Operation(summary = "Ativar/Desativar gerente", description = "Requer FULL_ADMIN ou ADMIN")
-    fun toggleActive(@PathVariable id: UUID): ResponseEntity<ManagerResponse> {
-        return ResponseEntity.ok(service.toggleActive(id))
-    }
+    fun toggleActive(
+        @PathVariable id: UUID,
+    ): ResponseEntity<ManagerResponse> = ResponseEntity.ok(service.toggleActive(id))
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Excluir gerente", description = "Requer FULL_ADMIN ou ADMIN")
-    fun delete(@PathVariable id: UUID): ResponseEntity<Void> {
+    fun delete(
+        @PathVariable id: UUID,
+    ): ResponseEntity<Void> {
         service.delete(id)
         return ResponseEntity.noContent().build()
     }
@@ -85,7 +85,7 @@ class ManagerController(
     @Operation(summary = "Resetar senha do gerente", description = "Requer FULL_ADMIN ou ADMIN")
     fun resetPassword(
         @PathVariable id: UUID,
-        @RequestBody @Valid request: ResetPasswordRequest
+        @RequestBody @Valid request: ResetPasswordRequest,
     ): ResponseEntity<Void> {
         authService.resetPassword(id, request)
         return ResponseEntity.noContent().build()

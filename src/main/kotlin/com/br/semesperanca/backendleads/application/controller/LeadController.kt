@@ -30,6 +30,10 @@ class LeadController(
     private val logger = LoggerFactory.getLogger(LeadController::class.java)
 
     @PostMapping("/receive")
+    @Operation(
+        summary = "Webhook",
+        description = "Endpoint que recebe os leads dos postais",
+    )
     fun receive(
         @Valid @RequestBody receivedNotificationDTO: LeadReceivedNotificationDTO,
         request: HttpServletRequest,
@@ -43,6 +47,10 @@ class LeadController(
     }
 
     @GetMapping("/search")
+    @Operation(
+        summary = "Lista leads filtros",
+        description = "Listagem de leads com filtros dinâmicos",
+    )
     fun getLeads(
         @RequestParam(required = false) status: String?,
         @RequestParam(required = false) corretorId: Long?,
@@ -58,11 +66,16 @@ class LeadController(
     }
 
     @GetMapping("/search/{id}")
+    @Operation(summary = "Buscar lead por ID")
     fun getLeadById(
         @PathVariable("id") id: UUID,
     ): ResponseEntity<LeadDTO> = ResponseEntity.ok(leadService.getById(id))
 
     @PutMapping("/{id}")
+    @Operation(
+        summary = "Atualizar lead",
+        description = "Atualização de leads os campos ausentes permanecem com o dados antigos",
+    )
     fun update(
         @PathVariable("id") id: UUID,
         @Valid @RequestBody updateLeadRequest: UpdateLeadRequest,
@@ -77,6 +90,7 @@ class LeadController(
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Excluir lead")
     fun delete(
         @PathVariable id: UUID,
         request: HttpServletRequest,
