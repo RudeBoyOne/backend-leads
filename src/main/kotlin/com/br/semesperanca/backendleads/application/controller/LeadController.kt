@@ -5,6 +5,8 @@ import com.br.semesperanca.backendleads.application.model.LeadReceivedNotificati
 import com.br.semesperanca.backendleads.application.model.request.UpdateLeadRequest
 import com.br.semesperanca.backendleads.domain.model.Lead
 import com.br.semesperanca.backendleads.domain.service.LeadService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
@@ -24,6 +26,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/leads")
+@Tag(name = "Leads", description = "Gerenciamento de leads")
 class LeadController(
     private val leadService: LeadService,
 ) {

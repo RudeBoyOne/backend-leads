@@ -94,6 +94,10 @@ class OAuth2LoginSecurityConfig(
                     .hasAnyRole("FULL_ADMIN", "ADMIN")
                     .requestMatchers(HttpMethod.PATCH, "/auth/change-password")
                     .hasAnyRole("FULL_ADMIN", "ADMIN", "REAL_ESTATE_AGENT", "MANAGER")
+                    .requestMatchers(HttpMethod.POST, "/sensor-property-metrics")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
+                    .requestMatchers(HttpMethod.DELETE, "/sensor-property-metrics/**")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
                     .anyRequest()
                     .authenticated()
             }.oauth2ResourceServer { oauth2 ->

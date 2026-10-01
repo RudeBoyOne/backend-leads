@@ -12,7 +12,10 @@ import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.model.BranchOwner
 import com.br.semesperanca.backendleads.domain.model.Lead
 import com.br.semesperanca.backendleads.domain.model.Property
+import com.br.semesperanca.backendleads.domain.model.PropertySensor
 import com.br.semesperanca.backendleads.domain.model.Role
+import com.br.semesperanca.backendleads.domain.model.SensorMetric
+import com.br.semesperanca.backendleads.domain.model.SensorMetricHourly
 import com.br.semesperanca.backendleads.domain.model.user.Manager
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent
 import com.br.semesperanca.backendleads.domain.model.user.User
@@ -116,6 +119,65 @@ object TestFixtures {
             status = status,
             active = active,
             createdAt = createdAt,
+            updatedAt = updatedAt,
+        )
+
+    fun propertySensor(
+        id: UUID? = UUID.randomUUID(),
+        propertyId: UUID? = AGENCY_ID,
+        deviceId: String? = "3DE62F3C",
+        createdAt: Instant? = Instant.parse("2026-01-15T10:00:00Z"),
+    ): PropertySensor =
+        PropertySensor(
+            id = id,
+            propertyId = propertyId,
+            deviceId = deviceId,
+            createdAt = createdAt,
+        )
+
+    fun sensorMetric(
+        deviceId: String? = "3DE62F3C",
+        temperature: Double? = 23.9,
+        humidity: Double? = 72.3,
+        luminosity: Double? = 4095.0,
+        recordedAt: Instant? = Instant.parse("2026-01-15T10:00:00Z"),
+    ): SensorMetric =
+        SensorMetric(
+            deviceId = deviceId,
+            temperature = temperature,
+            humidity = humidity,
+            luminosity = luminosity,
+            recordedAt = recordedAt,
+        )
+
+    fun sensorMetricHourly(
+        deviceId: String? = "3DE62F3C",
+        bucketStart: Instant? = Instant.parse("2026-01-15T10:00:00Z"),
+        sampleCount: Int? = 10,
+        temperatureSum: Double? = 237.0,
+        temperatureMin: Double? = 23.0,
+        temperatureMax: Double? = 24.5,
+        humiditySum: Double? = 720.0,
+        humidityMin: Double? = 70.0,
+        humidityMax: Double? = 75.0,
+        luminositySum: Double? = 40000.0,
+        luminosityMin: Double? = 3900.0,
+        luminosityMax: Double? = 4095.0,
+        updatedAt: Instant? = Instant.parse("2026-01-15T10:00:00Z"),
+    ): SensorMetricHourly =
+        SensorMetricHourly(
+            deviceId = deviceId,
+            bucketStart = bucketStart,
+            sampleCount = sampleCount,
+            temperatureSum = temperatureSum,
+            temperatureMin = temperatureMin,
+            temperatureMax = temperatureMax,
+            humiditySum = humiditySum,
+            humidityMin = humidityMin,
+            humidityMax = humidityMax,
+            luminositySum = luminositySum,
+            luminosityMin = luminosityMin,
+            luminosityMax = luminosityMax,
             updatedAt = updatedAt,
         )
 
