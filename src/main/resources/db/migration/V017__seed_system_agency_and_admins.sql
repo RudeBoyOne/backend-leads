@@ -8,7 +8,7 @@ VALUES (
     true
 );
 
-INSERT INTO "users" (id, real_estate_agency_id, role_id, name, email, password, active)
+INSERT INTO users (id, real_estate_agency_id, role_id, name, email, password, active)
 VALUES (
     gen_random_uuid(),
     (SELECT id FROM real_estate_agency WHERE email = 'sistema@backendleads.com.br'),
@@ -19,13 +19,14 @@ VALUES (
     true
 );
 
+-- Herança JOINED: a linha da tabela filha reaproveita o id do pai como PK.
 INSERT INTO real_estate_agent (id, creci)
 VALUES (
-    (SELECT id FROM "users" WHERE email = 'admin@semesperanca.com.br'),
-    'FULL-ADMIN-001'
+    (SELECT id FROM users WHERE email = 'admin@semesperanca.com.br'),
+    'ADMIN-001'
 );
 
-INSERT INTO "users" (id, real_estate_agency_id, role_id, name, email, password, active)
+INSERT INTO users (id, real_estate_agency_id, role_id, name, email, password, active)
 VALUES (
     gen_random_uuid(),
     (SELECT id FROM real_estate_agency WHERE email = 'sistema@backendleads.com.br'),
@@ -38,6 +39,6 @@ VALUES (
 
 INSERT INTO real_estate_agent (id, creci)
 VALUES (
-    (SELECT id FROM "users" WHERE email = 'mrRobo@gmail.com'),
-    'FULL-ADMIN-ELLIOT'
+    (SELECT id FROM users WHERE email = 'mrRobo@gmail.com'),
+    'ADMIN-ELLIOT'
 );
