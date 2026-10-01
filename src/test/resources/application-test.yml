@@ -16,6 +16,12 @@ GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET: test-client-secret
 OAUTH2_ISSUER_URI: https://accounts.google.com
 
+app:
+  iot:
+    mqtt:
+      # Sem broker nos testes de contexto completo: o subscriber nao tenta conectar.
+      enabled: false
+
 spring:
   security:
     oauth2:

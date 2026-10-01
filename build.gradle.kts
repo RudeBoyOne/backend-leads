@@ -88,6 +88,12 @@ dependencies {
     // flyway-database-postgresql e "optional" no starter, precisa ser explicito
     implementation("org.flywaydb:flyway-database-postgresql")
 
+    // MQTT over WebSocket para integracao com o broker IoT.
+    // No 1.4.0 o transporte WebSocket e um modulo opcional, declarado como
+    // platform (POM) que puxa o modulo e a versao coerente do Netty.
+    implementation("com.hivemq:hivemq-mqtt-client:1.4.0")
+    implementation(platform("com.hivemq:hivemq-mqtt-client-websocket:1.4.0"))
+
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("tools.jackson.module:jackson-module-kotlin")
