@@ -7,8 +7,8 @@ data class ManagerResponse(
     val id: UUID?,
     val name: String?,
     val email: String?,
-    val branchOffice: String?,
+    val branchOfficeId: UUID?,
     val role: String?,
     val active: Boolean,
-    val createdAt: LocalDateTime?
+    val createdAt: LocalDateTime?,
 )

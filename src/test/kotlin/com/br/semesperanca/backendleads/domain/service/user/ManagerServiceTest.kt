@@ -4,7 +4,9 @@ import com.br.semesperanca.backendleads.application.model.request.CreateManagerR
 import com.br.semesperanca.backendleads.application.model.request.UpdateManagerRequest
 import com.br.semesperanca.backendleads.application.model.request.UserFilterRequest
 import com.br.semesperanca.backendleads.configuration.exception.EmailAlreadyExistsException
+import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.model.user.Manager
+import com.br.semesperanca.backendleads.domain.repository.BranchOfficeRepository
 import com.br.semesperanca.backendleads.domain.repository.RoleRepository
 import com.br.semesperanca.backendleads.domain.repository.user.ManagerRepository
 import com.br.semesperanca.backendleads.domain.repository.user.UserRepository
@@ -44,14 +46,18 @@ class ManagerServiceTest {
 
     @Mock private lateinit var userRepository: UserRepository
 
+    @Mock private lateinit var branchOfficeRepository: BranchOfficeRepository
+
     private val passwordEncoder: PasswordEncoder = BCryptPasswordEncoder()
     private lateinit var service: ManagerService
 
     private val pageable: Pageable = PageRequest.of(0, 20, Sort.by("name"))
 
+    private val branchOfficeId = UUID.randomUUID()
+
     @BeforeEach
     fun setUp() {
-        service = ManagerService(repository, roleRepository, passwordEncoder, userRepository)
+        service = ManagerService(repository, roleRepository, passwordEncoder, userRepository, branchOfficeRepository)
     }
 
     private fun hash(password: String): String = requireNotNull(passwordEncoder.encode(password))
@@ -67,21 +73,27 @@ class ManagerServiceTest {
             .thenReturn(Optional.of(TestFixtures.role("MANAGER")))
     }
 
+    private fun stubBranchOffice() {
+        whenever(branchOfficeRepository.findById(branchOfficeId))
+            .thenReturn(Optional.of(BranchOffice(id = branchOfficeId, name = "Filial Centro")))
+    }
+
     @Nested
     inner class Create {
-        private val request = CreateManagerRequest("Bruno Lima", "bruno@example.com", "s3cret", "Filial Centro")
+        private val request = CreateManagerRequest("Bruno Lima", "bruno@example.com", "s3cret", branchOfficeId)
 
         @Test
         fun `cria o gerente com a role MANAGER`() {
             whenever(userRepository.existsByEmail("bruno@example.com")).thenReturn(false)
             stubRole()
+            stubBranchOffice()
             saveGeneratingId()
 
             val response = service.create(request)
 
             assertThat(response.name).isEqualTo("Bruno Lima")
             assertThat(response.email).isEqualTo("bruno@example.com")
-            assertThat(response.branchOffice).isEqualTo("Filial Centro")
+            assertThat(response.branchOfficeId).isEqualTo(branchOfficeId)
             assertThat(response.role).isEqualTo("MANAGER")
             assertThat(response.active).isTrue()
         }
@@ -90,6 +102,7 @@ class ManagerServiceTest {
         fun `grava a senha com hash BCrypt, nunca em texto puro`() {
             whenever(userRepository.existsByEmail(any())).thenReturn(false)
             stubRole()
+            stubBranchOffice()
             saveGeneratingId()
 
             service.create(request)
@@ -104,6 +117,7 @@ class ManagerServiceTest {
         fun `gerente nasce ativo`() {
             whenever(userRepository.existsByEmail(any())).thenReturn(false)
             stubRole()
+            stubBranchOffice()
             saveGeneratingId()
 
             assertThat(service.create(request).active).isTrue()
@@ -115,9 +129,9 @@ class ManagerServiceTest {
             stubRole()
             saveGeneratingId()
 
-            val response = service.create(request.copy(branchOffice = null))
+            val response = service.create(request.copy(branchOfficeId = null))
 
-            assertThat(response.branchOffice).isNull()
+            assertThat(response.branchOfficeId).isNull()
         }
 
         @Test
@@ -157,7 +171,7 @@ class ManagerServiceTest {
             assertThat(response.id).isEqualTo(manager.id)
             assertThat(response.name).isEqualTo("Bruno Lima")
             assertThat(response.email).isEqualTo("bruno@example.com")
-            assertThat(response.branchOffice).isEqualTo("Filial Centro")
+            assertThat(response.branchOfficeId).isEqualTo(manager.branchOffice?.id)
             assertThat(response.role).isEqualTo("MANAGER")
             assertThat(response.active).isTrue()
             assertThat(response.createdAt).isEqualTo(manager.createdAt)
@@ -251,25 +265,27 @@ class ManagerServiceTest {
 
     @Nested
     inner class Update {
-        private val request = UpdateManagerRequest("Bruno A. Lima", "bruno.novo@example.com", "Filial Norte")
+        private val request = UpdateManagerRequest("Bruno A. Lima", "bruno.novo@example.com", branchOfficeId)
 
         @Test
         fun `sobrescreve nome, e-mail e filial`() {
             val manager = TestFixtures.manager()
             whenever(repository.findById(manager.id!!)).thenReturn(Optional.of(manager))
+            stubBranchOffice()
             saveGeneratingId()
 
             val response = service.update(manager.id!!, request)
 
             assertThat(response.name).isEqualTo("Bruno A. Lima")
             assertThat(response.email).isEqualTo("bruno.novo@example.com")
-            assertThat(response.branchOffice).isEqualTo("Filial Norte")
+            assertThat(response.branchOfficeId).isEqualTo(branchOfficeId)
         }
 
         @Test
         fun `update nao mexe em active, role nem senha`() {
             val manager = TestFixtures.manager(isActive = false, password = hash("original"))
             whenever(repository.findById(manager.id!!)).thenReturn(Optional.of(manager))
+            stubBranchOffice()
             saveGeneratingId()
 
             val response = service.update(manager.id!!, request)

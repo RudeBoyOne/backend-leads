@@ -1,5 +1,6 @@
 package com.br.semesperanca.backendleads.domain.repository.user
 
+import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.model.Role
 import com.br.semesperanca.backendleads.domain.model.user.Manager
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent
@@ -54,6 +55,7 @@ class UserRepositoryTest : AbstractRepositoryTest() {
         email: String = "ana-${UUID.randomUUID().toString().take(8)}@example.com",
         creci: String = "CRECI-${UUID.randomUUID().toString().take(8)}",
         isActive: Boolean = true,
+        agencyId: UUID = insertAgency(),
     ): RealEstateAgent =
         TestFixtures
             .realEstateAgent(
@@ -63,16 +65,23 @@ class UserRepositoryTest : AbstractRepositoryTest() {
                 role = roleAgente,
                 isActive = isActive,
                 password = BCryptPasswordEncoder().encode("segredo"),
+                realEstateAgencyId = agencyId,
                 createdAt = null,
             )
 
-    private fun gerente(email: String = "bruno-${UUID.randomUUID().toString().take(8)}@example.com"): Manager =
+    private fun gerente(
+        email: String = "bruno-${UUID.randomUUID().toString().take(8)}@example.com",
+        agencyId: UUID = insertAgency(),
+        branchOffice: BranchOffice? = null,
+    ): Manager =
         TestFixtures
             .manager(
                 id = null,
                 email = email,
                 role = roleGerente,
                 password = BCryptPasswordEncoder().encode("segredo"),
+                realEstateAgencyId = agencyId,
+                branchOffice = branchOffice,
                 createdAt = null,
             )
 
@@ -204,26 +213,31 @@ class UserRepositoryTest : AbstractRepositoryTest() {
     }
 
     @Test
-    fun `o branchOffice do gerente fica só na tabela manager`() {
-        val salvo = repository.save(gerente())
+    fun `o branchOffice do gerente sobrevive ao round trip e fica na tabela users`() {
+        val agencyId = insertAgency()
+        val filial = BranchOffice(realEstateAgencyId = agencyId, name = "Filial Centro")
+        entityManager.persist(filial)
+        entityManager.flush()
+
+        val salvo = repository.save(gerente(agencyId = agencyId, branchOffice = filial))
         entityManager.flush()
         entityManager.clear()
 
         val relido = managerRepository.findByEmail(salvo.email!!).get()
 
-        assertThat(relido.branchOffice).isEqualTo("Filial Centro")
+        assertThat(relido.branchOffice?.name).isEqualTo("Filial Centro")
         assertThat(entidadeNaTabelaFilha("manager", salvo.id!!)).isTrue()
         assertThat(entidadeNaTabelaFilha("real_estate_agent", salvo.id!!)).isFalse()
     }
 
     /**
-     * O `V007` semeia dois `FULL_ADMIN` reais, então a tabela `users` já começa
+     * O `V017` semeia dois `FULL_ADMIN` reais, então a tabela `users` já começa
      * com 2 linhas — `count` nunca é zero aqui. Este teste é a prova de que o
-     * seed sobreviveu às 13 migrations: sem ele, um `authService.login` com o
+     * seed sobreviveu às migrations: sem ele, um `authService.login` com o
      * e-mail do admin cairia no `Optional.empty`.
      */
     @Test
-    fun `o seed do V007 criou os dois admins com papel FULL_ADMIN`() {
+    fun `o seed do V017 criou os dois admins com papel FULL_ADMIN`() {
         val admin = repository.findByEmail("admin@semesperanca.com.br")
 
         assertThat(admin).isPresent

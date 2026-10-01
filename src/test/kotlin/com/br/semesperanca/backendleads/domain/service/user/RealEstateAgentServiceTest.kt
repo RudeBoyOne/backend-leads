@@ -4,7 +4,9 @@ import com.br.semesperanca.backendleads.application.model.request.CreateRealEsta
 import com.br.semesperanca.backendleads.application.model.request.UpdateRealEstateAgentRequest
 import com.br.semesperanca.backendleads.application.model.request.UserFilterRequest
 import com.br.semesperanca.backendleads.configuration.exception.EmailAlreadyExistsException
+import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent
+import com.br.semesperanca.backendleads.domain.repository.BranchOfficeRepository
 import com.br.semesperanca.backendleads.domain.repository.RoleRepository
 import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository
 import com.br.semesperanca.backendleads.domain.repository.user.UserRepository
@@ -44,14 +46,18 @@ class RealEstateAgentServiceTest {
 
     @Mock private lateinit var userRepository: UserRepository
 
+    @Mock private lateinit var branchOfficeRepository: BranchOfficeRepository
+
     private val passwordEncoder: PasswordEncoder = BCryptPasswordEncoder()
     private lateinit var service: RealEstateAgentService
 
     private val pageable: Pageable = PageRequest.of(0, 20, Sort.by("name"))
 
+    private val branchOfficeId = UUID.randomUUID()
+
     @BeforeEach
     fun setUp() {
-        service = RealEstateAgentService(repository, roleRepository, passwordEncoder, userRepository)
+        service = RealEstateAgentService(repository, roleRepository, passwordEncoder, userRepository, branchOfficeRepository)
     }
 
     private fun hash(password: String): String = requireNotNull(passwordEncoder.encode(password))
@@ -67,16 +73,23 @@ class RealEstateAgentServiceTest {
             .thenReturn(Optional.of(TestFixtures.role("REAL_ESTATE_AGENT")))
     }
 
+    /** `create`/`update` resolvem a filial informada no request antes de salvar. */
+    private fun stubBranchOffice(id: UUID = branchOfficeId) {
+        whenever(branchOfficeRepository.findById(id))
+            .thenReturn(Optional.of(BranchOffice(name = "Filial Centro")))
+    }
+
     @Nested
     inner class Create {
         private val request =
-            CreateRealEstateAgentRequest("Ana Paula", "ana@example.com", "s3cret", "CRECI-123")
+            CreateRealEstateAgentRequest("Ana Paula", "ana@example.com", "s3cret", "CRECI-123", branchOfficeId)
 
         @Test
         fun `cria o corretor com a role REAL_ESTATE_AGENT`() {
             whenever(userRepository.existsByEmail("ana@example.com")).thenReturn(false)
             whenever(repository.existsByCreci("CRECI-123")).thenReturn(false)
             stubRole()
+            stubBranchOffice()
             saveGeneratingId()
 
             val response = service.create(request)
@@ -93,6 +106,7 @@ class RealEstateAgentServiceTest {
             whenever(userRepository.existsByEmail(any())).thenReturn(false)
             whenever(repository.existsByCreci(any())).thenReturn(false)
             stubRole()
+            stubBranchOffice()
             saveGeneratingId()
 
             service.create(request)
@@ -248,12 +262,13 @@ class RealEstateAgentServiceTest {
 
     @Nested
     inner class Update {
-        private val request = UpdateRealEstateAgentRequest("Ana P. Souza", "ana.nova@example.com", "CRECI-999")
+        private val request = UpdateRealEstateAgentRequest("Ana P. Souza", "ana.nova@example.com", "CRECI-999", branchOfficeId)
 
         @Test
         fun `sobrescreve nome, e-mail e CRECI`() {
             val agent = TestFixtures.realEstateAgent()
             whenever(repository.findById(agent.id!!)).thenReturn(Optional.of(agent))
+            stubBranchOffice()
             saveGeneratingId()
 
             val response = service.update(agent.id!!, request)
@@ -267,6 +282,7 @@ class RealEstateAgentServiceTest {
         fun `update nao mexe em active, role nem senha`() {
             val agent = TestFixtures.realEstateAgent(isActive = false, password = hash("original"))
             whenever(repository.findById(agent.id!!)).thenReturn(Optional.of(agent))
+            stubBranchOffice()
             saveGeneratingId()
 
             val response = service.update(agent.id!!, request)

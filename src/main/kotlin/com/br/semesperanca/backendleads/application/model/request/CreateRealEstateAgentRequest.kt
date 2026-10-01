@@ -15,5 +15,6 @@ data class CreateRealEstateAgentRequest(
     @field:Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
     val password: String,
     @field:NotBlank(message = "CRECI é obrigatório")
-    val creci: String
+    val creci: String,
+    val branchOfficeId: java.util.UUID?,
 )

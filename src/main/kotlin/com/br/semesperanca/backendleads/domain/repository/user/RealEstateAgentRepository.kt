@@ -8,8 +8,12 @@ import java.util.Optional
 import java.util.UUID
 
 @Repository
-interface RealEstateAgentRepository : JpaRepository<RealEstateAgent, UUID>, JpaSpecificationExecutor<RealEstateAgent> {
+interface RealEstateAgentRepository :
+    JpaRepository<RealEstateAgent, UUID>,
+    JpaSpecificationExecutor<RealEstateAgent> {
     fun findByEmail(email: String): Optional<RealEstateAgent>
 
     fun existsByCreci(creci: String): Boolean
+
+    fun findByBranchOfficeId(branchOfficeId: UUID): List<RealEstateAgent>
 }

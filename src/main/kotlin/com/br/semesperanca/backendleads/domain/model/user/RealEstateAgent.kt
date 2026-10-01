@@ -7,6 +7,6 @@ import jakarta.persistence.Table
 @Entity
 @Table(name = "real_estate_agent")
 class RealEstateAgent(
-    @Column(name = "creci", nullable = false, unique = true)
-    var creci: String? = null
+    @Column(name = "creci", unique = true)
+    var creci: String? = null,
 ) : User()

@@ -8,6 +8,7 @@ import com.br.semesperanca.backendleads.application.model.response.ManagerRespon
 import com.br.semesperanca.backendleads.application.model.response.PropertyResponse
 import com.br.semesperanca.backendleads.application.model.response.RealEstateAgentResponse
 import com.br.semesperanca.backendleads.domain.model.Activity
+import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.model.BranchOwner
 import com.br.semesperanca.backendleads.domain.model.Lead
 import com.br.semesperanca.backendleads.domain.model.Property
@@ -166,6 +167,8 @@ object TestFixtures {
         role: Role? = role("REAL_ESTATE_AGENT"),
         isActive: Boolean = true,
         password: String = "{noop}secret",
+        realEstateAgencyId: UUID? = AGENCY_ID,
+        branchOffice: BranchOffice? = null,
         createdAt: LocalDateTime? = LocalDateTime.of(2026, 1, 15, 10, 0),
     ): RealEstateAgent =
         RealEstateAgent(creci = creci).apply {
@@ -175,27 +178,32 @@ object TestFixtures {
             this.role = role
             this.isActive = isActive
             setPassword(password)
+            this.realEstateAgencyId = realEstateAgencyId
+            this.branchOffice = branchOffice
             this.createdAt = createdAt
         }
 
     fun manager(
         id: UUID? = UUID.randomUUID(),
-        branchOffice: String? = "Filial Centro",
+        branchOffice: BranchOffice? = null,
         name: String? = "Bruno Lima",
         email: String? = "bruno@example.com",
         role: Role? = role("MANAGER"),
         isActive: Boolean = true,
         password: String = "{noop}secret",
+        realEstateAgencyId: UUID? = AGENCY_ID,
         createdAt: LocalDateTime? = LocalDateTime.of(2026, 1, 15, 10, 0),
     ): Manager =
-        Manager(branchOffice = branchOffice).apply {
+        Manager().apply {
             this.id = id
             this.name = name
             this.email = email
             this.role = role
             this.isActive = isActive
             setPassword(password)
+            this.realEstateAgencyId = realEstateAgencyId
             this.createdAt = createdAt
+            this.branchOffice = branchOffice
         }
 
     /**
@@ -286,7 +294,7 @@ object TestFixtures {
             id = id,
             name = name,
             email = "bruno@example.com",
-            branchOffice = "Filial Centro",
+            branchOfficeId = null,
             role = "MANAGER",
             active = active,
             createdAt = LocalDateTime.of(2026, 1, 15, 10, 0),
@@ -302,6 +310,7 @@ object TestFixtures {
             name = name,
             email = "ana@example.com",
             creci = "CRECI-123",
+            branchOfficeId = null,
             role = "REAL_ESTATE_AGENT",
             active = active,
             createdAt = LocalDateTime.of(2026, 1, 15, 10, 0),

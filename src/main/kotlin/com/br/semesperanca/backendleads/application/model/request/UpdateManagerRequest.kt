@@ -3,6 +3,7 @@ package com.br.semesperanca.backendleads.application.model.request
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import java.util.UUID
 
 data class UpdateManagerRequest(
     @field:NotBlank(message = "Nome é obrigatório")
@@ -11,5 +12,5 @@ data class UpdateManagerRequest(
     @field:NotBlank(message = "Email é obrigatório")
     @field:Email(message = "Email inválido")
     val email: String,
-    val branchOffice: String?
+    val branchOfficeId: UUID?,
 )

@@ -1,5 +1,6 @@
 package com.br.semesperanca.backendleads.domain.model.user
 
+import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.model.Role
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -27,9 +28,14 @@ abstract class User(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     var id: UUID? = null,
+    @Column(name = "real_estate_agency_id", nullable = false)
+    var realEstateAgencyId: UUID? = null,
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
     var role: Role? = null,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_office_id")
+    var branchOffice: BranchOffice? = null,
     @Column(name = "name", nullable = false)
     var name: String? = null,
     @Column(name = "email", nullable = false, unique = true)

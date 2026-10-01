@@ -7,6 +7,7 @@ import com.br.semesperanca.backendleads.application.model.response.RealEstateAge
 import com.br.semesperanca.backendleads.configuration.exception.EmailAlreadyExistsException
 import com.br.semesperanca.backendleads.domain.model.Role
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent
+import com.br.semesperanca.backendleads.domain.repository.BranchOfficeRepository
 import com.br.semesperanca.backendleads.domain.repository.RoleRepository
 import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository
 import com.br.semesperanca.backendleads.domain.repository.user.UserRepository
@@ -24,7 +25,8 @@ class RealEstateAgentService(
     private val repository: RealEstateAgentRepository,
     private val roleRepository: RoleRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val branchOfficeRepository: BranchOfficeRepository,
 ) {
     @Transactional
     fun create(request: CreateRealEstateAgentRequest): RealEstateAgentResponse {
@@ -34,17 +36,23 @@ class RealEstateAgentService(
         if (repository.existsByCreci(request.creci)) {
             throw RuntimeException("CRECI já cadastrado")
         }
-        val role: Role = roleRepository
-            .findByName("REAL_ESTATE_AGENT")
-            .orElseThrow { RuntimeException("Role não encontrada") }
+        val role: Role =
+            roleRepository
+                .findByName("REAL_ESTATE_AGENT")
+                .orElseThrow { RuntimeException("Role não encontrada") }
 
-        val agent = RealEstateAgent(creci = request.creci).apply {
-            name = request.name
-            email = request.email
-            setPassword(passwordEncoder.encode(request.password))
-            this.role = role
-            isActive = true
-        }
+        val agent =
+            RealEstateAgent(creci = request.creci).apply {
+                name = request.name
+                email = request.email
+                setPassword(passwordEncoder.encode(request.password))
+                this.role = role
+                isActive = true
+                this.branchOffice =
+                    request.branchOfficeId?.let {
+                        branchOfficeRepository.findById(it).orElseThrow { RuntimeException("Filial não encontrada") }
+                    }
+            }
 
         return toResponse(repository.save(agent))
     }
@@ -52,11 +60,18 @@ class RealEstateAgentService(
     fun findById(id: UUID): RealEstateAgentResponse = toResponse(findAgentById(id))
 
     @Transactional
-    fun update(id: UUID, request: UpdateRealEstateAgentRequest): RealEstateAgentResponse {
+    fun update(
+        id: UUID,
+        request: UpdateRealEstateAgentRequest,
+    ): RealEstateAgentResponse {
         val agent = findAgentById(id)
         agent.name = request.name
         agent.email = request.email
         agent.creci = request.creci
+        agent.branchOffice =
+            request.branchOfficeId?.let {
+                branchOfficeRepository.findById(it).orElseThrow { RuntimeException("Filial não encontrada") }
+            }
         return toResponse(repository.save(agent))
     }
 
@@ -73,28 +88,31 @@ class RealEstateAgentService(
         repository.delete(agent)
     }
 
-    private fun findAgentById(id: UUID): RealEstateAgent {
-        return repository.findById(id).orElseThrow { RuntimeException("Corretor não encontrado") }
-    }
+    private fun findAgentById(id: UUID): RealEstateAgent =
+        repository.findById(id).orElseThrow { RuntimeException("Corretor não encontrado") }
 
-    private fun toResponse(agent: RealEstateAgent): RealEstateAgentResponse {
-        return RealEstateAgentResponse(
+    private fun toResponse(agent: RealEstateAgent): RealEstateAgentResponse =
+        RealEstateAgentResponse(
             id = agent.id,
             name = agent.name,
             email = agent.email,
             creci = agent.creci,
+            branchOfficeId = agent.branchOffice?.id,
             role = agent.role?.name,
             active = agent.isActive,
-            createdAt = agent.createdAt
+            createdAt = agent.createdAt,
         )
-    }
 
-    fun findAll(filter: UserFilterRequest, pageable: Pageable): Page<RealEstateAgentResponse> {
-        return repository.findAll(buildSpec(filter), pageable).map { toResponse(it) }
-    }
+    fun findAll(
+        filter: UserFilterRequest,
+        pageable: Pageable,
+    ): Page<RealEstateAgentResponse> =
+        repository.findAll(buildSpec(filter), pageable).map {
+            toResponse(it)
+        }
 
-    private fun buildSpec(filter: UserFilterRequest): Specification<RealEstateAgent> {
-        return Specification { root, _, cb ->
+    private fun buildSpec(filter: UserFilterRequest): Specification<RealEstateAgent> =
+        Specification { root, _, cb ->
             val predicates = mutableListOf<Predicate>()
             if (filter.active != null) {
                 predicates.add(cb.equal(root.get<String>("active"), filter.active))
@@ -104,11 +122,10 @@ class RealEstateAgentService(
                 predicates.add(
                     cb.or(
                         cb.like(cb.lower(root.get<String>("name")), pattern),
-                        cb.like(cb.lower(root.get<String>("email")), pattern)
-                    )
+                        cb.like(cb.lower(root.get<String>("email")), pattern),
+                    ),
                 )
             }
             cb.and(*predicates.toTypedArray())
         }
-    }
 }

@@ -12,5 +12,6 @@ data class UpdateRealEstateAgentRequest(
     @field:Email(message = "Email inválido")
     val email: String,
     @field:NotBlank(message = "CRECI é obrigatório")
-    val creci: String
+    val creci: String,
+    val branchOfficeId: java.util.UUID?,
 )
