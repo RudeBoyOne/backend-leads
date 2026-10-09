@@ -32,6 +32,15 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI}
+      MQTT_ENABLED: ${MQTT_ENABLED:-true}
+      MQTT_BROKER_HOST: ${MQTT_BROKER_HOST:-localhost}
+      MQTT_BROKER_PORT: ${MQTT_BROKER_PORT:-9001}
+      MQTT_SERVER_PATH: ${MQTT_SERVER_PATH:-/mqtt}
+      MQTT_TOPIC: ${MQTT_TOPIC:-100esperanca/metrics/#}
+      MQTT_CLIENT_ID: ${MQTT_CLIENT_ID:-backend-leads}
+      MQTT_USERNAME: ${MQTT_USERNAME:-}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      MQTT_QOS: ${MQTT_QOS:-1}
     depends_on:
       postgres:
         condition: service_healthy

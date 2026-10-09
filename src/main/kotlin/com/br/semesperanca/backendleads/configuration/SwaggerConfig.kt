@@ -10,17 +10,15 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class SwaggerConfig {
-
     @Bean
-    fun openAPI(): OpenAPI {
-        return OpenAPI()
+    fun openAPI(): OpenAPI =
+        OpenAPI()
             .info(
                 Info()
                     .title("Backend Leads API")
                     .description("API para gerenciamento de leads imobiliários")
-                    .version("1.0.0")
-            )
-            .addSecurityItem(SecurityRequirement().addList("Bearer Authentication"))
+                    .version("1.0.0"),
+            ).addSecurityItem(SecurityRequirement().addList("Bearer Authentication"))
             .components(
                 Components().addSecuritySchemes(
                     "Bearer Authentication",
@@ -28,8 +26,7 @@ class SwaggerConfig {
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
                         .bearerFormat("JWT")
-                        .description("Insira o token JWT obtido via /api/auth/login ou Google OAuth2")
-                )
+                        .description("Insira o token JWT obtido via /auth/login ou Google OAuth2"),
+                ),
             )
-    }
 }

@@ -62,6 +62,17 @@ app:
     secret: ${JWT_SECRET}
     expiration: 86400000
     issuer: ${JWT_ISSUER:http://backend-leads.local}
+  iot:
+    mqtt:
+      enabled: ${MQTT_ENABLED:true}
+      broker-host: ${MQTT_BROKER_HOST:localhost}
+      broker-port: ${MQTT_BROKER_PORT:9001}
+      server-path: ${MQTT_SERVER_PATH:/mqtt}
+      topic: ${MQTT_TOPIC:100esperanca/metrics/#}
+      client-id: ${MQTT_CLIENT_ID:backend-leads}
+      username: ${MQTT_USERNAME:}
+      password: ${MQTT_PASSWORD:}
+      qos: ${MQTT_QOS:1}
 
 management:
   endpoints:
