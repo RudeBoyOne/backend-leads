@@ -24,9 +24,6 @@ class Team(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manager_id", nullable = false)
     var manager: Manager? = null,
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "branch_office_id")
-    var branchOffice: BranchOffice? = null,
     @Column(name = "created_at", updatable = false)
     var createdAt: LocalDateTime? = null,
     @Column(name = "updated_at")

@@ -1,6 +1,7 @@
 package com.br.semesperanca.backendleads.domain.repository
 
 import com.br.semesperanca.backendleads.domain.model.BranchOwner
+import com.br.semesperanca.backendleads.domain.model.Role
 import com.br.semesperanca.backendleads.support.AbstractRepositoryTest
 import com.br.semesperanca.backendleads.support.TestFixtures
 import org.assertj.core.api.Assertions.assertThat
@@ -28,18 +29,32 @@ class BranchOwnerRepositoryTest : AbstractRepositoryTest() {
 
     private lateinit var outraAgencyId: UUID
 
+    /**
+     * A `V020` semeia a Marina Reis como branch owner da Filial Centro, então a
+     * tabela nunca começa vazia. Os testes que contam comparam com este número em
+     * vez de assumirem zero — assim eles continuam válidos se o seed crescer.
+     */
+    private var semeados: Long = 0
+
     @BeforeEach
     fun setUp() {
         agencyId = insertAgency("Imob A")
         outraAgencyId = insertAgency("Imob B")
+        semeados = repository.count()
     }
 
+    /**
+     * `users.email` é `UNIQUE`, e o responsável é um `User`. O e-mail padrão é
+     * único por sufixo aleatório de propósito: vários `novo()` no mesmo teste
+     *colidiriam no índice único, e a falha apareceria como `users_email_key`
+     * em vez de um nome duplicado, que é o que o teste está checando.
+     */
     private fun novo(
         agency: UUID = agencyId,
         name: String = "Carlos Souza",
-        email: String? = "carlos@example.com",
+        email: String? = "carlos-${UUID.randomUUID()}@example.com",
         phone: String? = "11912345678",
-        active: Boolean = true,
+        isActive: Boolean = true,
     ): BranchOwner =
         TestFixtures.branchOwner(
             id = null,
@@ -47,10 +62,12 @@ class BranchOwnerRepositoryTest : AbstractRepositoryTest() {
             name = name,
             email = email,
             phone = phone,
-            active = active,
+            // `users.role_id` é NOT NULL. O responsável carrega ADMIN — é essa role
+            // que faz `hasRole("ADMIN")` significar "branch owner" na autorização.
+            role = insertRole(Role.ADMIN),
+            isActive = isActive,
             createdAt = null,
-            updatedAt = null,
-        )
+        ).apply { updatedAt = null }
 
     @Test
     fun `save preenche o id e os dois timestamps`() {
@@ -72,12 +89,24 @@ class BranchOwnerRepositoryTest : AbstractRepositoryTest() {
         assertThat(repository.findAll(spec).map { it.name }).containsExactlyInAnyOrder("Carlos", "Fernanda")
     }
 
+    /**
+     * A agency entra no filtro junto com `active`, e não por acaso: o `V020`
+     * semeia Marina Reis como responsável ativo, então um `containsExactly("Ativo")`
+     * sem filtro de agência veria duas linhas e o teste passaria a falhar por causa
+     * de uma seed, não por causa do filtro.
+     */
     @Test
-    fun `filtro por active esconde oBravo desligado`() {
-        repository.save(novo(name = "Ativo", active = true))
-        repository.save(novo(name = "Inativo", active = false))
+    fun `filtro por active esconde o desativado`() {
+        repository.save(novo(name = "Ativo", isActive = true))
+        repository.save(novo(name = "Inativo", isActive = false))
 
-        val spec = Specification<BranchOwner> { root, _, cb -> cb.isTrue(root.get("active")) }
+        val spec =
+            Specification<BranchOwner> { root, _, cb ->
+                cb.and(
+                    cb.equal(root.get<UUID>("realEstateAgencyId"), agencyId),
+                    cb.isTrue(root.get("isActive")),
+                )
+            }
 
         assertThat(repository.findAll(spec).map { it.name }).containsExactly("Ativo")
     }
@@ -136,17 +165,19 @@ class BranchOwnerRepositoryTest : AbstractRepositoryTest() {
         entityManager.flush()
         entityManager.clear()
 
-        assertThat(repository.count()).isZero()
+        // A cascata vem de `users.real_estate_agency_id ON DELETE CASCADE`, e o
+        // responsável é uma linha de `users`: ela morre com a agência.
+        assertThat(repository.count()).isEqualTo(semeados)
     }
 
     @Test
     fun `count e existsById refletem o estado real da tabela`() {
-        assertThat(repository.count()).isZero()
+        assertThat(repository.count()).isEqualTo(semeados)
 
         val salvo = repository.save(novo())
         entityManager.flush()
 
-        assertThat(repository.count()).isEqualTo(1)
+        assertThat(repository.count()).isEqualTo(semeados + 1)
         assertThat(repository.existsById(salvo.id!!)).isTrue()
     }
 }

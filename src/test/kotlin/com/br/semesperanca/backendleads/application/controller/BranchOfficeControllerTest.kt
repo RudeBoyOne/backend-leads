@@ -35,10 +35,13 @@ class BranchOfficeControllerTest : AbstractControllerSlice() {
 
     private val agencyId = UUID.randomUUID()
 
+    private val branchOwnerId = UUID.randomUUID()
+
     private fun response() =
         BranchOfficeResponse(
             id = filialId,
             realEstateAgencyId = agencyId,
+            branchOwnerId = UUID.randomUUID(),
             name = "Filial Centro",
             address = "Av. Paulista, 1000",
             phone = "1133334444",
@@ -75,7 +78,7 @@ class BranchOfficeControllerTest : AbstractControllerSlice() {
                   "name": "Filial Centro",
                   "address": "Av. Paulista, 1000",
                   "phone": "1133334444",
-                  "realEstateAgencyId": "$agencyId"
+                  "branchOwnerId": "$branchOwnerId"
                 }
                 """.trimIndent(),
             ).exchange()
@@ -91,7 +94,7 @@ class BranchOfficeControllerTest : AbstractControllerSlice() {
             .post()
             .uri("/branch-offices")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"name": "   ", "realEstateAgencyId": "$agencyId"}""")
+            .content("""{"name": "   ", "branchOwnerId": "$branchOwnerId"}""")
             .exchange()
             .assertThat()
             .hasStatus(400)
@@ -101,13 +104,15 @@ class BranchOfficeControllerTest : AbstractControllerSlice() {
     }
 
     /**
-     * `realEstateAgencyId` e um UUID nao anulavel do construtor: falta-lo quebra a
+     * `branchOwnerId` e um UUID nao anulavel do construtor: falta-lo quebra a
      * deserializacao, e o `HttpMessageNotReadableException` cai no handler de
      * `RuntimeException` — sem o mapa de `fields`, que e coisa do
-     * `MethodArgumentNotValidException`.
+     * `MethodArgumentNotValidException`. O `@NotNull` do DTO e a segunda rede,
+     * e nunca chega a ser exercido por JSON: o Jackson aborta antes, porque
+     * `null` para um parametro Kotlin nao anulavel tambem e falha de binding.
      */
     @Test
-    fun `POST sem agencyId devolve 400 com o erro de deserializacao`() {
+    fun `POST sem branchOwnerId devolve 400 com o erro de deserializacao`() {
         mvc
             .post()
             .uri("/branch-offices")
@@ -117,10 +122,11 @@ class BranchOfficeControllerTest : AbstractControllerSlice() {
             .assertThat()
             .hasStatus(400)
             .matches(jsonNotEmpty("$.message"))
-            .matches(content().string(containsString("realEstateAgencyId")))
+            .matches(content().string(containsString("branchOwnerId")))
 
         verify(service, never()).create(any())
     }
+
 
     @Test
     fun `GET por id devolve a filial`() {

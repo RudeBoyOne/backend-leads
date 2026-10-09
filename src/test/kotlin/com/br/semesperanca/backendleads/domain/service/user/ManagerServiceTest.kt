@@ -4,6 +4,7 @@ import com.br.semesperanca.backendleads.application.model.request.CreateManagerR
 import com.br.semesperanca.backendleads.application.model.request.UpdateManagerRequest
 import com.br.semesperanca.backendleads.application.model.request.UserFilterRequest
 import com.br.semesperanca.backendleads.configuration.exception.EmailAlreadyExistsException
+import com.br.semesperanca.backendleads.configuration.exception.NotFoundException
 import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.model.user.Manager
 import com.br.semesperanca.backendleads.domain.repository.BranchOfficeRepository
@@ -73,9 +74,15 @@ class ManagerServiceTest {
             .thenReturn(Optional.of(TestFixtures.role("MANAGER")))
     }
 
+    /**
+     * A filial precisa de agência e de responsável: `branch_office` tem
+     * `real_estate_agency_id` e `branch_owner_id` como `NOT NULL`, e é a agência
+     * dela que o gerente herda.
+     */
+    private val filial = TestFixtures.branchOffice(id = branchOfficeId)
+
     private fun stubBranchOffice() {
-        whenever(branchOfficeRepository.findById(branchOfficeId))
-            .thenReturn(Optional.of(BranchOffice(id = branchOfficeId, name = "Filial Centro")))
+        whenever(branchOfficeRepository.findById(branchOfficeId)).thenReturn(Optional.of(filial))
     }
 
     @Nested
@@ -123,15 +130,36 @@ class ManagerServiceTest {
             assertThat(service.create(request).active).isTrue()
         }
 
+        /**
+         * Filial de outra agencia nao resolve no `BranchOfficeRepository` escopado,
+         * entao nem chega a ser gravado. E o `realEstateAgencyId` sai da filial,
+         * nunca do corpo.
+         */
         @Test
-        fun `filial e opcional`() {
+        fun `filial fora do escopo aborta antes do save`() {
             whenever(userRepository.existsByEmail(any())).thenReturn(false)
             stubRole()
+            whenever(branchOfficeRepository.findById(branchOfficeId)).thenReturn(Optional.empty())
+
+            assertThatThrownBy { service.create(request) }
+                .isInstanceOf(NotFoundException::class.java)
+                .hasMessage("Filial não encontrada")
+
+            verify(repository, never()).save(any<Manager>())
+        }
+
+        @Test
+        fun `a agencia do gerente e derivada da filial`() {
+            whenever(userRepository.existsByEmail(any())).thenReturn(false)
+            stubRole()
+            stubBranchOffice()
             saveGeneratingId()
 
-            val response = service.create(request.copy(branchOfficeId = null))
+            service.create(request)
 
-            assertThat(response.branchOfficeId).isNull()
+            val captor = argumentCaptor<Manager>()
+            verify(repository).save(captor.capture())
+            assertThat(captor.firstValue.realEstateAgencyId).isEqualTo(filial.realEstateAgencyId)
         }
 
         @Test
@@ -153,7 +181,7 @@ class ManagerServiceTest {
 
             assertThatThrownBy { service.create(request) }
                 .isInstanceOf(RuntimeException::class.java)
-                .hasMessage("Role não encontrada")
+                .hasMessage("Role MANAGER não encontrada — a V002 semeia a tabela role")
 
             verify(repository, never()).save(any())
         }

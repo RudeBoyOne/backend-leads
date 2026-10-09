@@ -9,7 +9,8 @@ data class BranchOwnerResponse(
     val name: String,
     val email: String?,
     val phone: String?,
+    val role: String?,
     val active: Boolean,
     val createdAt: LocalDateTime?,
-    val updatedAt: LocalDateTime?
+    val updatedAt: LocalDateTime?,
 )

@@ -28,9 +28,25 @@ class EntityLifecycleTest {
 
     private val ANTIGO_INSTANT = Instant.parse("2020-01-01T08:00:00Z")
 
+    /**
+     * `createdAt` e `updatable = false`: sobrescrevê-lo no `@PrePersist` faria o
+     * banco recusar a linha, ou o Hibernate guardar uma data diferente da que a
+     * Migration gravou. O callback só preenche quando vem nulo, como em `Property`
+     * e `BranchOffice`, e é isso que o teste fixa.
+     */
     @Test
-    fun `User prePersist sobrescreve createdAt mesmo se ja vinher preenchido`() {
+    fun `User prePersist preserva createdAt e renova updatedAt`() {
         val user = TestFixtures.realEstateAgent(createdAt = ANTIGO)
+
+        user.prePersist()
+
+        assertThat(user.createdAt).isEqualTo(ANTIGO)
+        assertThat(user.updatedAt).isAfter(ANTES)
+    }
+
+    @Test
+    fun `User prePersist preenche createdAt quando vem nulo`() {
+        val user = TestFixtures.realEstateAgent().apply { createdAt = null }
 
         user.prePersist()
 
@@ -98,7 +114,7 @@ class EntityLifecycleTest {
 
     @Test
     fun `BranchOwner prePersist preserva um createdAt que ja veio preenchido`() {
-        val branchOwner = TestFixtures.branchOwner(createdAt = ANTIGO, updatedAt = ANTIGO)
+        val branchOwner = TestFixtures.branchOwner(createdAt = ANTIGO).apply { updatedAt = ANTIGO }
 
         branchOwner.prePersist()
 
@@ -108,7 +124,7 @@ class EntityLifecycleTest {
 
     @Test
     fun `BranchOwner prePersist preenche createdAt quando vem nulo`() {
-        val branchOwner = TestFixtures.branchOwner(createdAt = null, updatedAt = null)
+        val branchOwner = TestFixtures.branchOwner(createdAt = null).apply { updatedAt = null }
 
         branchOwner.prePersist()
 
@@ -118,7 +134,7 @@ class EntityLifecycleTest {
 
     @Test
     fun `BranchOwner preUpdate so mexe em updatedAt`() {
-        val branchOwner = TestFixtures.branchOwner(createdAt = ANTIGO, updatedAt = ANTIGO)
+        val branchOwner = TestFixtures.branchOwner(createdAt = ANTIGO).apply { updatedAt = ANTIGO }
 
         branchOwner.preUpdate()
 

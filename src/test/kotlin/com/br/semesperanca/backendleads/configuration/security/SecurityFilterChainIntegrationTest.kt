@@ -1,11 +1,16 @@
 package com.br.semesperanca.backendleads.configuration.security
 
+import com.br.semesperanca.backendleads.domain.model.user.User
+import com.br.semesperanca.backendleads.domain.repository.RoleRepository
+import com.br.semesperanca.backendleads.domain.repository.user.UserRepository
 import com.br.semesperanca.backendleads.domain.service.EmailService
 import com.br.semesperanca.backendleads.domain.service.InsightClient
 import com.br.semesperanca.backendleads.support.AbstractIntegrationTest
 import com.br.semesperanca.backendleads.support.TestJwt
 import com.br.semesperanca.backendleads.support.jsonEquals
+import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
@@ -31,6 +36,13 @@ import java.util.UUID
  * `CustomJwtDecoder` cai no decoder local e valida emissor e expiração — não é
  * atalho de autenticação.
  *
+ * Por isso os papéis aqui são **usuários de verdade em `users`**, e o `sub` do
+ * token é o id do usuário semeado: o conversor relê a role do banco em vez de
+ * confiar na claim, e um `sub` que não corresponde a ninguém é recusado com 401.
+ * A versão anterior deste arquivo confiava na claim `role` e usava um `sub`
+ * fixo que não existia no banco — ou seja, ela não testava o caminho de
+ * autenticação, só o de autorização.
+ *
  * O que a matriz fixa é o contrato de acesso da API: quem entra sem token, quem
  * toma 401, quem toma 403, e — o ponto que nenhum teste de controller alcança —
  * que uma rota nova nasce protegida, porque a chain da API é catch-all e não
@@ -53,7 +65,60 @@ class SecurityFilterChainIntegrationTest : AbstractIntegrationTest() {
     @MockitoBean
     private lateinit var insightClient: InsightClient
 
+    @Autowired
+    private lateinit var userRepository: UserRepository
+
+    @Autowired
+    private lateinit var roleRepository: RoleRepository
+
+    @Autowired
+    private lateinit var entityManager: EntityManager
+
+    /** Id que não existe em nenhuma tabela: o escopo o devolve vazio, e a rota 404. */
     private val id: UUID = UUID.randomUUID()
+
+    /**
+     * Um usuário real por papel, semeado uma vez por JVM. `@SpringBootTest` não
+     * dá rollback, e `users.email` é `UNIQUE`: semear a cada método colidiria com
+     * a linha do método anterior. O `id` fica num `companion` porque o JUnit cria
+     * uma instância da classe por método.
+     */
+    @BeforeEach
+    fun semeiaUsuariosUmaVez() {
+        if (idsPorPapel.isNotEmpty()) return
+        val agencia =
+            entityManager
+                .createNativeQuery("SELECT id FROM real_estate_agency LIMIT 1")
+                .singleResult as UUID
+        idsPorPapel =
+            PAPEIS.associateWith { papel ->
+                userRepository.save(
+                    User(realEstateAgencyId = agencia, role = roleRepository.findByName(papel).orElseThrow()).apply {
+                        name = "Teste $papel"
+                        // E-mail único por papel e por seed: `users.email` é UNIQUE
+                        // e a linha é permanente, então um e-mail fixo só funcionaria
+                        // enquanto houvesse um único banco por JVM.
+                        email = "chain-$papel-${UUID.randomUUID()}@example.com"
+                        isActive = true
+                        setPassword("{noop}senha")
+                    },
+                ).id!!
+            }
+        entityManager.clear()
+    }
+
+    /**
+     * Cabeçalho `Authorization` de um papel: token assinado de verdade com o
+     * `sub` do usuário semeado daquele papel.
+     *
+     * A claim `role` é [claim] e não [papel] de propósito — é assim que os testes
+     * provam que ela é ignorada. O padrão é a própria claim, para os testes de
+     * matriz ficarem legíveis como `bearerDe("ADMIN")`.
+     */
+    private fun bearerDe(
+        papel: String,
+        claim: String? = papel,
+    ): String = "Bearer " + TestJwt.token(claim, subject = idsPorPapel.getValue(papel).toString())
 
     // ------------------------------------------------------------- público
 
@@ -165,55 +230,103 @@ class SecurityFilterChainIntegrationTest : AbstractIntegrationTest() {
 
     // --------------------------------------------------------------- 403
 
+    /**
+     * Token de gente autenticada, sem permissão na rota: 403 com o corpo do
+     * handler, e não 401 — a autenticação passou, a autorização é que não.
+     */
     @Test
-    fun `token válido mas sem o papel dá 403 com o corpo do access denied handler`() {
+    fun `token valido mas sem permissao nesta rota da 403 com o corpo do access denied handler`() {
         mvc
             .perform(
                 MockMvcRequestBuilders
                     .request(HttpMethod.GET, "/real-estate-agents")
-                    .header(HttpHeaders.AUTHORIZATION, TestJwt.bearer("MANAGER")),
+                    .header(HttpHeaders.AUTHORIZATION, bearerDe("TEAM_AGENT")),
             ).andExpect(status().isForbidden)
             .andExpect(jsonEquals("$.status", "403"))
             .andExpect(jsonEquals("$.error", "Forbidden"))
             .andExpect(jsonEquals("$.message", "Acesso negado — você não tem permissão para acessar este recurso"))
     }
 
+    /**
+     * A claim `role` é **ignorada**. O `sub` identifica o usuário e o conversor
+     * relê a role no banco, então um token sem claim e um token que se declara
+     * `FULL_ADMIN` dão exatamente a mesma resposta quando o usuário do `sub` é
+     * gerente: 403 nos dois casos. Confiar na claim devolveria a quem o escopo
+     * já tirou, e só quando o token expirasse é que voltaria ao lugar certo.
+     */
     @Test
-    fun `token sem claim role dá 403 e não 401 - a autenticação passou`() {
-        assertThat(codigo(HttpMethod.GET, "/real-estate-agents", TestJwt.bearer(null))).isEqualTo(403)
+    fun `a claim role do token e ignorada - a role vem do banco`() {
+        val semClaim = codigo(HttpMethod.GET, "/real-estate-agents", bearerDe("TEAM_AGENT", claim = null))
+        val declarada = codigo(HttpMethod.GET, "/real-estate-agents", bearerDe("TEAM_AGENT", claim = "FULL_ADMIN"))
+
+        assertThat(semClaim).isEqualTo(403)
+        assertThat(declarada).isEqualTo(403)
     }
 
+    /**
+     * Promoção não vem de token: o mesmo `sub` com claims diferentes continua
+     * sendo o mesmo usuário, com a mesma role. A autoridade acompanha o banco,
+     * e não o que o token afirma.
+     */
     @Test
-    fun `a autoridade vem da claim role e não do subject do token`() {
-        // Mesmo subject nos dois tokens: se o conversor lesse o subject, dariam
-        // a mesma resposta.
-        val subject = "11111111-1111-1111-1111-111111111111"
-        val comoGerente = TestJwt.token("MANAGER", subject = subject)
-        val comoAdmin = TestJwt.token("FULL_ADMIN", subject = subject)
+    fun `o mesmo subject com claims diferentes continua sendo o mesmo usuario`() {
+        val comoGerente = codigo(HttpMethod.GET, "/managers", bearerDe("MANAGER", claim = "MANAGER"))
+        val comoAdmin = codigo(HttpMethod.GET, "/managers", bearerDe("MANAGER", claim = "FULL_ADMIN"))
+        val semClaim = codigo(HttpMethod.GET, "/managers", bearerDe("MANAGER", claim = null))
 
-        assertThat(codigo(HttpMethod.GET, "/real-estate-agents", "Bearer $comoGerente")).isEqualTo(403)
-        assertThat(codigo(HttpMethod.GET, "/real-estate-agents", "Bearer $comoAdmin")).isNotEqualTo(403)
+        assertThat(comoGerente).isEqualTo(comoAdmin).isEqualTo(semClaim).isNotEqualTo(403)
+    }
+
+    /**
+     * `sub` que não é UUID é recusado antes do banco; `sub` que é UUID mas não
+     * está em `users` é recusado depois. Os dois são 401: token que não aponta
+     * para uma pessoa real não é token de ninguém.
+     */
+    @Test
+    fun `sub que nao corresponde a ninguem da 401, e nao 403`() {
+        assertThat(codigo(HttpMethod.GET, "/real-estate-agents", TestJwt.bearer("FULL_ADMIN", subject = TestJwt.NOT_A_UUID_SUBJECT)))
+            .isEqualTo(401)
+        assertThat(codigo(HttpMethod.GET, "/real-estate-agents", TestJwt.bearer("FULL_ADMIN", subject = TestJwt.UNKNOWN_UUID_SUBJECT)))
+            .isEqualTo(401)
     }
 
     // ------------------------------------------------- matriz de papéis
 
     @Test
-    fun `GET real-estate-agents é liberada para FULL_ADMIN e ADMIN`() {
-        assertPassa(HttpMethod.GET, "/real-estate-agents", "FULL_ADMIN")
-        assertPassa(HttpMethod.GET, "/real-estate-agents", "ADMIN")
-    }
-
-    @Test
-    fun `GET real-estate-agents barra MANAGER, REAL_ESTATE_AGENT e TEAM_AGENT`() {
-        listOf("MANAGER", "REAL_ESTATE_AGENT", "TEAM_AGENT").forEach { papel ->
-            assertBarra(HttpMethod.GET, "/real-estate-agents", papel)
+    fun `GET real-estate-agents é liberada para os quatro papeis de pessoa`() {
+        listOf("FULL_ADMIN", "ADMIN", "MANAGER", "REAL_ESTATE_AGENT").forEach { papel ->
+            assertPassa(HttpMethod.GET, "/real-estate-agents", papel)
         }
     }
 
     @Test
-    fun `GET real-estate-agents por id abre um papel que a listagem não abre`() {
-        assertPassa(HttpMethod.GET, "/real-estate-agents/$id", "REAL_ESTATE_AGENT")
-        assertBarra(HttpMethod.GET, "/real-estate-agents/$id", "MANAGER")
+    fun `GET real-estate-agents barra o TEAM_AGENT`() {
+        assertBarra(HttpMethod.GET, "/real-estate-agents", "TEAM_AGENT")
+    }
+
+    /**
+     * Listagem e registro por id têm o mesmo piso de role na URL. A diferença
+     * entre "não tem permissão" e "não existe" é do escopo, não do filtro: um
+     * corretor que peça o id de um colega passa do filtro e toma 404 do
+     * `findById` escopado. 403 aqui confirmaria que o registro existe.
+     */
+    @Test
+    fun `a listagem e o registro por id dividem o mesmo piso de role`() {
+        listOf("FULL_ADMIN", "ADMIN", "MANAGER", "REAL_ESTATE_AGENT").forEach { papel ->
+            assertPassa(HttpMethod.GET, "/real-estate-agents/$id", papel)
+        }
+        assertBarra(HttpMethod.GET, "/real-estate-agents/$id", "TEAM_AGENT")
+    }
+
+    /**
+     * O id é aleatório e não existe, então o corretor sai com 404 mesmo passando
+     * do filtro: é o `findById` escopado que responde, e ele não distingue
+     * "inexistente" de "de outra filial" — os dois são vazio.
+     */
+    @Test
+    fun `quem passa do filtro leva 404 do escopo, e nunca 403`() {
+        assertThat(codigo(HttpMethod.GET, "/real-estate-agents/$id", bearerDe("REAL_ESTATE_AGENT"))).isEqualTo(404)
+        assertThat(codigo(HttpMethod.GET, "/real-estate-agents/$id", bearerDe("ADMIN"))).isEqualTo(404)
     }
 
     @Test
@@ -236,18 +349,33 @@ class SecurityFilterChainIntegrationTest : AbstractIntegrationTest() {
         assertPassa(HttpMethod.POST, "/auth/register/full-admin", "FULL_ADMIN")
     }
 
+    /**
+     * `PATCH /auth/change-password` é `.authenticated()` e não
+     * `hasAnyRole(...)`: trocar a própria senha não é privilégio de hierarquia.
+     * Quem não tem o papel também tem senha para trocar, e excluir o
+     * `TEAM_AGENT` daqui só o obrigaria a um e-mail novo quando esquecesse a
+     * senha. Sem corpo a resposta é 400, e 400 é o que "passou do filtro" quer
+     * dizer aqui.
+     */
     @Test
-    fun `trocar senha aceita os quatro papeis de pessoa e barra o TEAM_AGENT`() {
-        listOf("FULL_ADMIN", "ADMIN", "MANAGER", "REAL_ESTATE_AGENT").forEach { papel ->
+    fun `trocar a propria senha e liberada para qualquer autenticado, ate o TEAM_AGENT`() {
+        PAPEIS.forEach { papel ->
             assertPassa(HttpMethod.PATCH, "/auth/change-password", papel)
         }
-        assertBarra(HttpMethod.PATCH, "/auth/change-password", "TEAM_AGENT")
+        assertThat(codigo(HttpMethod.PATCH, "/auth/change-password")).isEqualTo(401)
     }
 
+    /**
+     * Remoção é só do root: `ON DELETE CASCADE` leva junto gerente, corretor,
+     * imóvel, sensor e lead da subárvore, e não há como reverter isso — por isso
+     * nem o branch owner, que enxerga tudo o que é dele, deleta.
+     */
     @Test
-    fun `deletar corretor é restrito a FULL_ADMIN e ADMIN`() {
-        assertPassa(HttpMethod.DELETE, "/real-estate-agents/$id", "ADMIN")
-        assertBarra(HttpMethod.DELETE, "/real-estate-agents/$id", "MANAGER")
+    fun `deletar corretor e restrito ao FULL_ADMIN, nem o branch owner passa`() {
+        assertPassa(HttpMethod.DELETE, "/real-estate-agents/$id", "FULL_ADMIN")
+        listOf("ADMIN", "MANAGER", "REAL_ESTATE_AGENT", "TEAM_AGENT").forEach { papel ->
+            assertBarra(HttpMethod.DELETE, "/real-estate-agents/$id", papel)
+        }
     }
 
     @Test
@@ -255,6 +383,7 @@ class SecurityFilterChainIntegrationTest : AbstractIntegrationTest() {
         assertPassa(HttpMethod.PATCH, "/managers/$id/reset-password", "ADMIN")
         assertBarra(HttpMethod.PATCH, "/managers/$id/reset-password", "MANAGER")
         assertPassa(HttpMethod.PATCH, "/real-estate-agents/$id/reset-password", "FULL_ADMIN")
+        assertBarra(HttpMethod.PATCH, "/real-estate-agents/$id/reset-password", "REAL_ESTATE_AGENT")
     }
 
     @Test
@@ -286,7 +415,7 @@ class SecurityFilterChainIntegrationTest : AbstractIntegrationTest() {
                 .perform(
                     MockMvcRequestBuilders
                         .request(HttpMethod.GET, "/rota-que-nao-existe-mesmo")
-                        .header(HttpHeaders.AUTHORIZATION, TestJwt.bearer("TEAM_AGENT")),
+                        .header(HttpHeaders.AUTHORIZATION, bearerDe("TEAM_AGENT")),
                 ).andReturn()
                 .response
 
@@ -322,7 +451,7 @@ class SecurityFilterChainIntegrationTest : AbstractIntegrationTest() {
         uri: String,
         papel: String,
     ) {
-        val codigo = codigo(metodo, uri, TestJwt.bearer(papel))
+        val codigo = codigo(metodo, uri, bearerDe(papel))
         assertThat(codigo).describedAs("%s %s com papel %s", metodo, uri, papel).isNotIn(401, 403)
     }
 
@@ -331,7 +460,7 @@ class SecurityFilterChainIntegrationTest : AbstractIntegrationTest() {
         uri: String,
         papel: String,
     ) {
-        val codigo = codigo(metodo, uri, TestJwt.bearer(papel))
+        val codigo = codigo(metodo, uri, bearerDe(papel))
         assertThat(codigo).describedAs("%s %s com papel %s", metodo, uri, papel).isEqualTo(403)
     }
 
@@ -352,5 +481,13 @@ class SecurityFilterChainIntegrationTest : AbstractIntegrationTest() {
             .perform(request)
             .andReturn()
             .response.status
+    }
+
+    private companion object {
+        /** Os papéis que a matriz de autorização exercita. */
+        val PAPEIS = listOf("FULL_ADMIN", "ADMIN", "MANAGER", "REAL_ESTATE_AGENT", "TEAM_AGENT")
+
+        /** `papel -> id em users`. Vazio até o primeiro teste semear. */
+        var idsPorPapel: Map<String, UUID> = emptyMap()
     }
 }

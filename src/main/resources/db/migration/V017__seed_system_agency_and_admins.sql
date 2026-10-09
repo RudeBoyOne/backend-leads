@@ -1,3 +1,13 @@
+-- Root do software: pessoa externa ao negócio, usada para checagem, investigação
+-- e dashboard de gerenciamento. Não é corretor e não é lotado em filial.
+--
+-- A linha fica SÓ em `users`: a raiz da herança JOINED é concreta justamente
+-- para que "não é nenhum dos três subtipos" seja um estado legível. A versão
+-- anterior semeava uma linha em `real_estate_agent` com CRECI `ADMIN-001` só
+-- para o ORM ter o que instanciar — o admin virava um corretor sem CRECI de
+-- verdade, e o escopo de `RealEstateAgent` o alcançava por acidente.
+--
+-- `users.branch_office_id` fica NULL: FULL_ADMIN é root, não é escopado.
 INSERT INTO real_estate_agency (id, name, cnpj, email, phone, active)
 VALUES (
     gen_random_uuid(),
@@ -19,13 +29,6 @@ VALUES (
     true
 );
 
--- Herança JOINED: a linha da tabela filha reaproveita o id do pai como PK.
-INSERT INTO real_estate_agent (id, creci)
-VALUES (
-    (SELECT id FROM users WHERE email = 'admin@semesperanca.com.br'),
-    'ADMIN-001'
-);
-
 INSERT INTO users (id, real_estate_agency_id, role_id, name, email, password, active)
 VALUES (
     gen_random_uuid(),
@@ -35,10 +38,4 @@ VALUES (
     'mrRobo@gmail.com',
     '$2a$10$XMwVHzL717TnAsqqoTUNlOUGuy1xiMNcH.F7y8ezEs02fnOiNZLFy',
     true
-);
-
-INSERT INTO real_estate_agent (id, creci)
-VALUES (
-    (SELECT id FROM users WHERE email = 'mrRobo@gmail.com'),
-    'ADMIN-ELLIOT'
 );

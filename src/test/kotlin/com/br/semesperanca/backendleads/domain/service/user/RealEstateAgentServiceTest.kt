@@ -150,7 +150,7 @@ class RealEstateAgentServiceTest {
 
             assertThatThrownBy { service.create(request) }
                 .isInstanceOf(RuntimeException::class.java)
-                .hasMessage("Role não encontrada")
+                .hasMessage("Role REAL_ESTATE_AGENT não encontrada — a V002 semeia a tabela role")
 
             verify(repository, never()).save(any())
         }

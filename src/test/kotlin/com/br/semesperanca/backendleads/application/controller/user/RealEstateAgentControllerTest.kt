@@ -38,6 +38,13 @@ class RealEstateAgentControllerTest : AbstractControllerSlice() {
 
     @Autowired private lateinit var mvc: MockMvcTester
 
+    /**
+     * Filial é `NOT NULL` e `@NotNull` no create e no update. O id não é validado
+     * aqui: o slice não tem repositório, e a existência da filial é problema do
+     * `BranchOfficeRepository` escopado, não do binding do JSON.
+     */
+    private val branchOfficeId = UUID.randomUUID()
+
     @Test
     fun `GET embrulha os query params em UserFilterRequest e repassa a pagina`() {
         val item = TestFixtures.realEstateAgentResponse()
@@ -85,7 +92,7 @@ class RealEstateAgentControllerTest : AbstractControllerSlice() {
             .uri("/real-estate-agents")
             .contentType(MediaType.APPLICATION_JSON)
             .content(
-                """{"name": "Ana Paula", "email": "ana@example.com", "password": "segredo123", "creci": "CRECI-123"}""",
+                """{"name": "Ana Paula", "email": "ana@example.com", "password": "segredo123", "creci": "CRECI-123", "branchOfficeId": "$branchOfficeId"}""",
             ).exchange()
             .assertThat()
             .hasStatus(201)
@@ -99,7 +106,7 @@ class RealEstateAgentControllerTest : AbstractControllerSlice() {
             .post()
             .uri("/real-estate-agents")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"name": "Ana Paula", "email": "ana@example.com", "password": "segredo123", "creci": ""}""")
+            .content("""{"name": "Ana Paula", "email": "ana@example.com", "password": "segredo123", "creci": "", "branchOfficeId": "$branchOfficeId"}""")
             .exchange()
             .assertThat()
             .hasStatus(400)
@@ -114,7 +121,7 @@ class RealEstateAgentControllerTest : AbstractControllerSlice() {
             .post()
             .uri("/real-estate-agents")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"name": "An", "email": "an@example.com", "password": "segredo123", "creci": "CRECI-9"}""")
+            .content("""{"name": "An", "email": "an@example.com", "password": "segredo123", "creci": "CRECI-9", "branchOfficeId": "$branchOfficeId"}""")
             .exchange()
             .assertThat()
             .hasStatus(400)
@@ -157,7 +164,7 @@ class RealEstateAgentControllerTest : AbstractControllerSlice() {
             .put()
             .uri("/real-estate-agents/$id")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"name": "Ana Beatriz", "email": "ana@example.com", "creci": "CRECI-456"}""")
+            .content("""{"name": "Ana Beatriz", "email": "ana@example.com", "creci": "CRECI-456", "branchOfficeId": "$branchOfficeId"}""")
             .exchange()
             .assertThat()
             .hasStatus(200)
@@ -170,7 +177,7 @@ class RealEstateAgentControllerTest : AbstractControllerSlice() {
             .put()
             .uri("/real-estate-agents/${UUID.randomUUID()}")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"name": "Ana", "email": "sem-arroba", "creci": "CRECI-1"}""")
+            .content("""{"name": "Ana", "email": "sem-arroba", "creci": "CRECI-1", "branchOfficeId": "$branchOfficeId"}""")
             .exchange()
             .assertThat()
             .hasStatus(400)

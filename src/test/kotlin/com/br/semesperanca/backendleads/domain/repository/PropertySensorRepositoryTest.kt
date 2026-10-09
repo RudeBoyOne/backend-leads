@@ -94,14 +94,20 @@ class PropertySensorRepositoryTest : AbstractRepositoryTest() {
 
     private fun insertProperty(): UUID {
         val id = UUID.randomUUID()
+        // `property.branch_office_id` é NOT NULL: o vínculo do sensor é sempre de
+        // um imóvel que pertence a uma filial, e é por ela que o escopo alcança o
+        // binding. Filial nova a cada chamada porque o nome precisa ser único
+        // dentro da agência.
+        val officeId = insertBranchOffice(agencyId, name = "Filial ${UUID.randomUUID()}").id!!
         entityManager
             .createNativeQuery(
                 """
-                INSERT INTO property (id, real_estate_agency_id, title, status, active)
-                VALUES (:id, :agencyId, 'Imovel Teste', 'available', TRUE)
+                INSERT INTO property (id, real_estate_agency_id, branch_office_id, title, status, active)
+                VALUES (:id, :agencyId, :officeId, 'Imovel Teste', 'available', TRUE)
                 """.trimIndent(),
             ).setParameter("id", id)
             .setParameter("agencyId", agencyId)
+            .setParameter("officeId", officeId)
             .executeUpdate()
         entityManager.clear()
         return id

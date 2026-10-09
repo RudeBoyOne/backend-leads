@@ -3,6 +3,7 @@ package com.br.semesperanca.backendleads.domain.service
 import com.br.semesperanca.backendleads.application.model.request.CreateTeamRequest
 import com.br.semesperanca.backendleads.application.model.request.UpdateTeamRequest
 import com.br.semesperanca.backendleads.application.model.response.TeamResponse
+import com.br.semesperanca.backendleads.configuration.exception.NotFoundException
 import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.model.Team
 import com.br.semesperanca.backendleads.domain.model.TeamAgent
@@ -12,6 +13,7 @@ import com.br.semesperanca.backendleads.domain.repository.TeamAgentRepository
 import com.br.semesperanca.backendleads.domain.repository.TeamRepository
 import com.br.semesperanca.backendleads.domain.repository.user.ManagerRepository
 import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -25,45 +27,51 @@ class TeamService(
     private val branchOfficeRepository: BranchOfficeRepository,
     private val realEstateAgentRepository: RealEstateAgentRepository,
 ) {
+    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
     fun create(request: CreateTeamRequest): TeamResponse {
         val manager = findManagerById(request.managerId)
-        val branchOffice = request.branchOfficeId?.let { findBranchOfficeById(it) }
-
-        val team =
-            Team(
-                manager = manager,
-                branchOffice = branchOffice,
-            )
-
-        return toResponse(teamRepository.save(team))
+        return toResponse(teamRepository.save(Team(manager = manager)))
     }
 
     fun findById(id: UUID): TeamResponse = toResponse(findTeamById(id))
 
     fun findAll(): List<TeamResponse> = teamRepository.findAll().map { toResponse(it) }
 
-    fun findByBranchOfficeId(branchOfficeId: UUID): List<TeamResponse> =
-        teamRepository.findByBranchOfficeId(branchOfficeId).map {
-            toResponse(it)
-        }
+    /**
+     * Times de uma filial. A filial do time é derivada do gerente, não
+     * armazenada: `team.branch_office_id` saiu do schema.
+     *
+     * A filial é validada pelo [BranchOfficeRepository] escopado primeiro, então
+     * pedir `/teams/branch-office/{id}` com a filial de outra agência não vaza
+     * nada: o `findById` não resolve e a chamada sai em 404.
+     */
+    fun findByBranchOfficeId(branchOfficeId: UUID): List<TeamResponse> {
+        findBranchOfficeById(branchOfficeId)
+        val managerIds = managerRepository.findByBranchOfficeId(branchOfficeId).mapNotNull { it.id }
+        if (managerIds.isEmpty()) return emptyList()
+        return teamRepository.findByManagerIdIn(managerIds).map { toResponse(it) }
+    }
 
+    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
     fun update(
         id: UUID,
         request: UpdateTeamRequest,
     ): TeamResponse {
         val team = findTeamById(id)
-        team.branchOffice = request.branchOfficeId?.let { findBranchOfficeById(it) }
+        request.managerId?.let { team.manager = findManagerById(it) }
         return toResponse(teamRepository.save(team))
     }
 
+    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
     fun delete(id: UUID) {
         val team = findTeamById(id)
         teamRepository.delete(team)
     }
 
+    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
     fun addAgent(
         teamId: UUID,
@@ -73,7 +81,7 @@ class TeamService(
         val agent = findAgentById(agentId)
 
         if (teamAgentRepository.existsByTeamIdAndRealEstateAgentId(teamId, agentId)) {
-            throw RuntimeException("Corretor já pertence a este time")
+            throw IllegalStateException("Corretor já pertence a este time")
         }
 
         val teamAgent =
@@ -85,6 +93,7 @@ class TeamService(
         teamAgentRepository.save(teamAgent)
     }
 
+    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
     fun removeAgent(
         teamId: UUID,
@@ -94,29 +103,28 @@ class TeamService(
             teamAgentRepository
                 .findByTeamId(teamId)
                 .find { it.realEstateAgent?.id == agentId }
-                ?: throw RuntimeException("Corretor não encontrado neste time")
+                ?: throw NotFoundException("Corretor não encontrado neste time")
         teamAgentRepository.delete(teamAgent)
     }
 
     fun findAgentsByTeamId(teamId: UUID): List<UUID> = teamAgentRepository.findByTeamId(teamId).mapNotNull { it.realEstateAgent?.id }
 
-    private fun findTeamById(id: UUID): Team = teamRepository.findById(id).orElseThrow { RuntimeException("Time não encontrado") }
+    private fun findTeamById(id: UUID): Team = teamRepository.findById(id).orElseThrow { NotFoundException("Time não encontrado") }
 
     private fun findManagerById(id: UUID): Manager =
-        managerRepository.findById(id).orElseThrow { RuntimeException("Gerente não encontrado") }
+        managerRepository.findById(id).orElseThrow { NotFoundException("Gerente não encontrado") }
 
     private fun findBranchOfficeById(id: UUID): BranchOffice =
-        branchOfficeRepository.findById(id).orElseThrow {
-            RuntimeException("Filial não encontrada")
-        }
+        branchOfficeRepository.findById(id).orElseThrow { NotFoundException("Filial não encontrada") }
 
-    private fun findAgentById(id: UUID) = realEstateAgentRepository.findById(id).orElseThrow { RuntimeException("Corretor não encontrado") }
+    private fun findAgentById(id: UUID) =
+        realEstateAgentRepository.findById(id).orElseThrow { NotFoundException("Corretor não encontrado") }
 
     private fun toResponse(team: Team): TeamResponse =
         TeamResponse(
             id = team.id,
             managerId = team.manager?.id,
-            branchOfficeId = team.branchOffice?.id,
+            branchOfficeId = team.manager?.branchOffice?.id,
             createdAt = team.createdAt,
         )
 }

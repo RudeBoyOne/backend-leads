@@ -1,5 +1,6 @@
 package com.br.semesperanca.backendleads.application.controller
 
+import com.br.semesperanca.backendleads.configuration.exception.NotFoundException
 import com.br.semesperanca.backendleads.domain.service.BranchOwnerService
 import com.br.semesperanca.backendleads.support.AbstractControllerSlice
 import com.br.semesperanca.backendleads.support.TestFixtures
@@ -38,6 +39,7 @@ class BranchOwnerControllerTest : AbstractControllerSlice() {
           "realEstateAgencyId": "${TestFixtures.AGENCY_ID}",
           "name": "Carlos Souza",
           "email": "carlos@example.com",
+          "password": "senha-secreta",
           "phone": "11912345678"
         }
         """.trimIndent()
@@ -81,7 +83,9 @@ class BranchOwnerControllerTest : AbstractControllerSlice() {
             .post()
             .uri("/branch-owners")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"realEstateAgencyId": "${TestFixtures.AGENCY_ID}", "name": ""}""")
+            .content(
+                """{"realEstateAgencyId": "${TestFixtures.AGENCY_ID}", "name": "", "email": "carlos@example.com", "password": "senha-secreta"}""",
+            )
             .exchange()
             .assertThat()
             .hasStatus(400)
@@ -212,17 +216,22 @@ class BranchOwnerControllerTest : AbstractControllerSlice() {
         verify(service).delete(id)
     }
 
+    /**
+     * 404 e não 400: `findById` escopado devolve vazio tanto para id inexistente
+     * quanto para id de outro responsável, e os dois casos precisam responder
+     * igual — 403 confirmaria ao cliente que o registro existe.
+     */
     @Test
-    fun `DELETE de id inexistente devolve 400`() {
+    fun `DELETE de id fora do escopo devolve 404`() {
         val id = UUID.randomUUID()
-        whenever(service.delete(id)).thenThrow(RuntimeException("Responsável não encontrado"))
+        whenever(service.delete(id)).thenThrow(NotFoundException("Responsável não encontrado"))
 
         mvc
             .delete()
             .uri("/branch-owners/$id")
             .exchange()
             .assertThat()
-            .hasStatus(400)
+            .hasStatus(404)
             .matches(jsonEquals("$.message", "Responsável não encontrado"))
     }
 }

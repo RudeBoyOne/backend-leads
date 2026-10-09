@@ -86,6 +86,7 @@ object TestFixtures {
     fun property(
         id: UUID? = UUID.randomUUID(),
         realEstateAgencyId: UUID? = AGENCY_ID,
+        branchOffice: BranchOffice? = null,
         title: String? = "Apartamento no centro",
         description: String? = "Sala, cozinha e dois quartos",
         price: BigDecimal? = BigDecimal("350000.00"),
@@ -105,6 +106,7 @@ object TestFixtures {
         Property(
             id = id,
             realEstateAgencyId = realEstateAgencyId,
+            branchOffice = branchOffice,
             title = title,
             description = description,
             price = price,
@@ -181,25 +183,59 @@ object TestFixtures {
             updatedAt = updatedAt,
         )
 
+    /**
+     * `BranchOwner` é subclasse de `User`, então nome, e-mail, agência e ativo
+     * vivem no construtor do pai e são atribuídos no `apply` — não são parâmetros
+     * de `BranchOwner`. `branchOffice` fica nulo de propósito: o responsável
+     * supervisiona N filiais, então não tem uma sede.
+     */
     fun branchOwner(
         id: UUID? = UUID.randomUUID(),
         realEstateAgencyId: UUID? = AGENCY_ID,
         name: String? = "Carlos Souza",
         email: String? = "carlos@example.com",
         phone: String? = "11912345678",
+        role: Role? = role(Role.ADMIN),
+        isActive: Boolean = true,
+        password: String = "{noop}secret",
+        createdAt: LocalDateTime? = LocalDateTime.of(2026, 1, 15, 10, 0),
+    ): BranchOwner =
+        BranchOwner(phone = phone).apply {
+            this.id = id
+            this.realEstateAgencyId = realEstateAgencyId
+            this.name = name
+            this.email = email
+            this.role = role
+            this.isActive = isActive
+            setPassword(password)
+            this.createdAt = createdAt
+        }
+
+    /**
+     * Filial com dono. `branch_office.branch_owner_id` é `NOT NULL` com `UNIQUE`,
+     * então uma filial de teste sem responsável não representa nada que o banco
+     * aceite — e um fixture que o banco rejeitaria só empurraria o problema para
+     * o teste que grava.
+     */
+    fun branchOffice(
+        id: UUID? = UUID.randomUUID(),
+        realEstateAgencyId: UUID? = AGENCY_ID,
+        branchOwner: BranchOwner? = null,
+        name: String? = "Filial Centro",
+        address: String? = "Rua das Flores, 100",
+        phone: String? = "1133334444",
         active: Boolean = true,
         createdAt: LocalDateTime? = LocalDateTime.of(2026, 1, 15, 10, 0),
-        updatedAt: LocalDateTime? = LocalDateTime.of(2026, 1, 15, 10, 0),
-    ): BranchOwner =
-        BranchOwner(
+    ): BranchOffice =
+        BranchOffice(
             id = id,
             realEstateAgencyId = realEstateAgencyId,
+            branchOwner = branchOwner,
             name = name,
-            email = email,
+            address = address,
             phone = phone,
             active = active,
             createdAt = createdAt,
-            updatedAt = updatedAt,
         )
 
     fun activity(
@@ -342,6 +378,7 @@ object TestFixtures {
             name = name,
             email = "carlos@example.com",
             phone = "11912345678",
+            role = Role.ADMIN,
             active = active,
             createdAt = LocalDateTime.of(2026, 1, 15, 10, 0),
             updatedAt = LocalDateTime.of(2026, 1, 15, 10, 0),

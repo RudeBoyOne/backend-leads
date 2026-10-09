@@ -9,10 +9,12 @@ import com.br.semesperanca.backendleads.application.model.response.SensorReading
 import com.br.semesperanca.backendleads.domain.model.PropertySensor
 import com.br.semesperanca.backendleads.domain.model.SensorMetric
 import com.br.semesperanca.backendleads.domain.model.SensorMetricHourly
+import com.br.semesperanca.backendleads.configuration.exception.NotFoundException
 import com.br.semesperanca.backendleads.domain.repository.PropertyRepository
 import com.br.semesperanca.backendleads.domain.repository.PropertySensorRepository
 import com.br.semesperanca.backendleads.domain.repository.SensorMetricHourlyRepository
 import com.br.semesperanca.backendleads.domain.repository.SensorMetricRepository
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -26,6 +28,12 @@ class SensorMetricService(
     private val sensorMetricHourlyRepository: SensorMetricHourlyRepository,
     private val propertyRepository: PropertyRepository,
 ) {
+    /**
+     * `property_sensor` não tem escopo próprio — o vínculo herda o do imóvel. Por
+     * isso os bindings são cruzados com os imóveis que o `PropertyRepository`
+     * escopado devolve: sem esse filtro, um branch owner veria temperatura e
+     * umidade de imóveis de outra agência só porque eles têm sensor.
+     */
     fun findAll(propertyId: UUID?): List<SensorPropertyMetricResponse> {
         val bindings =
             if (propertyId != null) {
@@ -36,16 +44,39 @@ class SensorMetricService(
 
         if (bindings.isEmpty()) return emptyList()
 
+        val visibleTitles = visiblePropertyTitles(bindings.mapNotNull { it.propertyId })
+        if (visibleTitles.isEmpty()) return emptyList()
+
         val deviceIds = bindings.map { it.deviceId!! }
         val metrics = sensorMetricRepository.findAllByDeviceIdIn(deviceIds).associateBy { it.deviceId }
 
         return bindings.mapNotNull { binding ->
+            val title = visibleTitles[binding.propertyId] ?: return@mapNotNull null
             val metric = metrics[binding.deviceId] ?: return@mapNotNull null
-            val property = propertyRepository.findById(binding.propertyId!!).orElse(null)
-            toResponse(metric, binding, property?.title)
+            toResponse(metric, binding, title)
         }
     }
 
+    /**
+     * Resolve os imóveis pelo repositório escopado e devolve só os que existem no
+     * escopo do principal. Chamar `findAllById` num repositório comum devolveria
+     * oQuadro completo; aqui o corte é o mesmo dos outros endpoints.
+     */
+    private fun visiblePropertyTitles(propertyIds: List<UUID>): Map<UUID, String> =
+        if (propertyIds.isEmpty()) {
+            emptyMap()
+        } else {
+            propertyRepository
+                .findAllById(propertyIds.toSet())
+                .mapNotNull { property -> property.id?.let { it to property.title!! } }
+                .toMap()
+        }
+
+    /**
+     * Um imóvel fora do escopo não tem binding visível: saímos em 404 pelo
+     * `PropertyRepository` escopado, e não 403, para não confirmar a existência do
+     * imóvel para quem não o pode ver.
+     */
     fun findByProperty(
         propertyId: UUID,
         hours: Int,
@@ -53,13 +84,13 @@ class SensorMetricService(
         val binding =
             propertySensorRepository
                 .findByPropertyId(propertyId)
-                .orElseThrow { RuntimeException("Nenhum sensor vinculado a este imovel") }
+                .orElseThrow { NotFoundException("Nenhum sensor vinculado a este imovel") }
 
         val deviceId = binding.deviceId!!
         val property =
             propertyRepository
                 .findById(propertyId)
-                .orElseThrow { RuntimeException("Imovel nao encontrado") }
+                .orElseThrow { NotFoundException("Imovel nao encontrado") }
 
         val metric = sensorMetricRepository.findById(deviceId).orElse(null)
         val latest =
@@ -88,12 +119,13 @@ class SensorMetricService(
         )
     }
 
+    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
     fun bind(request: BindPropertySensorRequest): PropertySensorResponse {
         val property =
             propertyRepository
                 .findById(request.propertyId)
-                .orElseThrow { RuntimeException("Imovel nao encontrado") }
+                .orElseThrow { NotFoundException("Imovel nao encontrado") }
 
         val existing = propertySensorRepository.findByDeviceId(request.deviceId)
         if (existing.isPresent && existing.get().propertyId == request.propertyId) {
@@ -114,12 +146,18 @@ class SensorMetricService(
         return toResponse(saved)
     }
 
+    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
     fun unbind(propertyId: UUID) {
+        // Valida o escopo do imóvel antes de desvincular: `property_sensor` não é
+        // uma entidade escopada, e sem esta checagem o desvinculo funcionaria para
+        // qualquer imóvel de qualquer agência.
+        propertyRepository.findById(propertyId).orElseThrow { NotFoundException("Imovel nao encontrado") }
+
         val binding =
             propertySensorRepository
                 .findByPropertyId(propertyId)
-                .orElseThrow { RuntimeException("Nenhum sensor vinculado a este imovel") }
+                .orElseThrow { NotFoundException("Nenhum sensor vinculado a este imovel") }
         propertySensorRepository.delete(binding)
     }
 

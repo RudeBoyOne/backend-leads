@@ -35,6 +35,13 @@ class PropertyControllerTest : AbstractControllerSlice() {
 
     @Autowired private lateinit var mvc: MockMvcTester
 
+    /**
+     * A filial é `@NotNull` no create e sai da `Property` por ela. O id não é
+     * validado aqui: o slice não tem repositório, e resolver a filial é trabalho
+     * do `BranchOfficeRepository` escopado, não do binding do JSON.
+     */
+    private val branchOfficeId = UUID.randomUUID()
+
     @Test
     fun `POST cria o imovel e devolve 201 com o JSON do servico`() {
         val created = TestFixtures.propertyResponse(title = "Cobertura duplex")
@@ -47,7 +54,7 @@ class PropertyControllerTest : AbstractControllerSlice() {
             .content(
                 """
                 {
-                  "realEstateAgencyId": "${TestFixtures.AGENCY_ID}",
+                  "branchOfficeId": "$branchOfficeId",
                   "title": "Cobertura duplex",
                   "description": "Vista para o parque",
                   "price": 1250000.00,
@@ -76,7 +83,7 @@ class PropertyControllerTest : AbstractControllerSlice() {
             .post()
             .uri("/properties")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"realEstateAgencyId": "${TestFixtures.AGENCY_ID}", "title": "  "}""")
+            .content("""{"branchOfficeId": "$branchOfficeId", "title": "  "}""")
             .exchange()
             .assertThat()
             .hasStatus(400)
@@ -92,7 +99,7 @@ class PropertyControllerTest : AbstractControllerSlice() {
             .uri("/properties")
             .contentType(MediaType.APPLICATION_JSON)
             .content(
-                """{"realEstateAgencyId": "${TestFixtures.AGENCY_ID}", "title": "Casa", "status": "nao-existe"}""",
+                """{"branchOfficeId": "$branchOfficeId", "title": "Casa", "status": "nao-existe"}""",
             ).exchange()
             .assertThat()
             .hasStatus(400)
@@ -100,12 +107,15 @@ class PropertyControllerTest : AbstractControllerSlice() {
     }
 
     /**
-     * `realEstateAgencyId` e `UUID` nao-nulo no construtor, entao a falha e de
+     * `branchOfficeId` e `UUID` nao-nulo no construtor, entao a falha e de
      * *binding* e nao de validacao: o Jackson aborta antes do `@Valid`, e a
      * `HttpMessageNotReadableException` cai no handler de `RuntimeException`.
+     * O `@NotNull` do DTO e a segunda rede, e nao e alcancavel por JSON: o
+     * Jackson aborta antes, porque `null` para um parametro Kotlin nao anulavel
+     * tambem e falha de binding.
      */
     @Test
-    fun `POST sem realEstateAgencyId devolve 400 com o erro de deserializacao, sem chamar o servico`() {
+    fun `POST sem branchOfficeId devolve 400 com o erro de deserializacao, sem chamar o servico`() {
         mvc
             .post()
             .uri("/properties")
@@ -115,10 +125,11 @@ class PropertyControllerTest : AbstractControllerSlice() {
             .assertThat()
             .hasStatus(400)
             .matches(jsonNotEmpty("$.message"))
-            .matches(content().string(containsString("realEstateAgencyId")))
+            .matches(content().string(containsString("branchOfficeId")))
 
         verify(service, never()).create(any())
     }
+
 
     @Test
     fun `GET lista pagina por padrao, sem filtros`() {

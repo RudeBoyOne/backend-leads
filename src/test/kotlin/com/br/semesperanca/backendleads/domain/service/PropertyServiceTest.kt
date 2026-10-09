@@ -3,6 +3,7 @@ package com.br.semesperanca.backendleads.domain.service
 import com.br.semesperanca.backendleads.application.model.request.CreatePropertyRequest
 import com.br.semesperanca.backendleads.application.model.request.UpdatePropertyRequest
 import com.br.semesperanca.backendleads.domain.model.Property
+import com.br.semesperanca.backendleads.domain.repository.BranchOfficeRepository
 import com.br.semesperanca.backendleads.domain.repository.PropertyRepository
 import com.br.semesperanca.backendleads.support.SpecProbe
 import com.br.semesperanca.backendleads.support.TestFixtures
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.Mockito.lenient
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
@@ -34,6 +36,8 @@ import java.util.UUID
 class PropertyServiceTest {
     @Mock private lateinit var repository: PropertyRepository
 
+    @Mock private lateinit var branchOfficeRepository: BranchOfficeRepository
+
     private lateinit var service: PropertyService
 
     private val pageable: Pageable = PageRequest.of(0, 20, Sort.by("title"))
@@ -52,12 +56,23 @@ class PropertyServiceTest {
 
     @BeforeEach
     fun setUp() {
-        service = PropertyService(repository)
+        service = PropertyService(repository, branchOfficeRepository)
+    }
+
+    private val filial = TestFixtures.branchOffice()
+
+    /**
+     * A filial é resolvida pelo `BranchOfficeRepository` escopado em todo create.
+     * O stub é `lenient` porque os testes de filtro e de leitura não criam imóvel,
+     * e o `MockitoExtension` reclamaria de stub sem uso.
+     */
+    private fun stubFilial() {
+        lenient().`when`(branchOfficeRepository.findById(filial.id!!)).thenReturn(Optional.of(filial))
     }
 
     private fun createRequest(status: String? = null) =
         CreatePropertyRequest(
-            realEstateAgencyId = TestFixtures.AGENCY_ID,
+            branchOfficeId = filial.id!!,
             title = "Apartamento no centro",
             description = "Sala, cozinha e dois quartos",
             price = BigDecimal("350000.00"),
@@ -76,6 +91,7 @@ class PropertyServiceTest {
     inner class Create {
         @Test
         fun `persiste o imovel com todos os campos do request`() {
+            stubFilial()
             saveGeneratingId()
 
             val response = service.create(createRequest())
@@ -100,6 +116,7 @@ class PropertyServiceTest {
 
         @Test
         fun `imovel nasce ativo, independente do request`() {
+            stubFilial()
             saveGeneratingId()
 
             val response = service.create(createRequest())
@@ -109,6 +126,7 @@ class PropertyServiceTest {
 
         @Test
         fun `status ausente assume available`() {
+            stubFilial()
             saveGeneratingId()
 
             val response = service.create(createRequest(status = null))
@@ -118,6 +136,7 @@ class PropertyServiceTest {
 
         @Test
         fun `status informado e respeitado`() {
+            stubFilial()
             saveGeneratingId()
 
             val response = service.create(createRequest(status = "reserved"))

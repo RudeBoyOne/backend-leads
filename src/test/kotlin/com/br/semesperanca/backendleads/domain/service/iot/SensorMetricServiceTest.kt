@@ -1,6 +1,7 @@
 package com.br.semesperanca.backendleads.domain.service.iot
 
 import com.br.semesperanca.backendleads.application.model.request.BindPropertySensorRequest
+import com.br.semesperanca.backendleads.configuration.exception.NotFoundException
 import com.br.semesperanca.backendleads.application.model.response.HourlySensorMetricResponse
 import com.br.semesperanca.backendleads.application.model.response.SensorPropertyMetricDetailResponse
 import com.br.semesperanca.backendleads.application.model.response.SensorPropertyMetricResponse
@@ -42,6 +43,14 @@ class SensorMetricServiceTest {
     private val propertyId = UUID.randomUUID()
     private val deviceId = "3DE62F3C"
 
+    /**
+     * `findAll` resolve os títulos por `findAllById`, que é o método escopado do
+     * `PropertyRepository`. O id precisa estar na própria entidade: é a chave do
+     * mapa que liga o binding ao título.
+     */
+    private fun visibleProperty(title: String, id: UUID = propertyId) =
+        Property(title = title).apply { this.id = id }
+
     @Test
     fun `findAll deve retornar lista vazia quando nao ha bindings`() {
         whenever(propertySensorRepository.findAllByOrderByPropertyIdAsc()).thenReturn(emptyList())
@@ -62,11 +71,9 @@ class SensorMetricServiceTest {
                 luminosity = 4095.0,
                 recordedAt = Instant.now(),
             )
-        val property = Property(title = "Apartamento no centro")
-
         whenever(propertySensorRepository.findAllByOrderByPropertyIdAsc()).thenReturn(listOf(binding))
         whenever(sensorMetricRepository.findAllByDeviceIdIn(listOf(deviceId))).thenReturn(listOf(metric))
-        whenever(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property))
+        whenever(propertyRepository.findAllById(setOf(propertyId))).thenReturn(listOf(visibleProperty("Apartamento no centro")))
 
         val result = service.findAll(null)
 
@@ -91,7 +98,7 @@ class SensorMetricServiceTest {
 
         whenever(propertySensorRepository.findByPropertyId(propertyId)).thenReturn(Optional.of(binding))
         whenever(sensorMetricRepository.findAllByDeviceIdIn(listOf(deviceId))).thenReturn(listOf(metric))
-        whenever(propertyRepository.findById(propertyId)).thenReturn(Optional.of(Property(title = "Imovel")))
+        whenever(propertyRepository.findAllById(setOf(propertyId))).thenReturn(listOf(visibleProperty("Imovel")))
 
         val result = service.findAll(propertyId)
 
@@ -99,11 +106,38 @@ class SensorMetricServiceTest {
         assertThat(result[0].propertyId).isEqualTo(propertyId)
     }
 
+    /**
+     * `property_sensor` não é entidade escopada — o vínculo herda o escopo do
+     * imóvel. Como o `findAllById` consulto devolve só o que o principal enxerga,
+     * um binding cujo imóvel está fora do escopo desaparece da lista, e o serviço
+     * nem chega a ler as métricas dele. Era este o furo: sem o corte, um branch
+     * owner veria temperatura e umidade de imóveis de outra agência.
+     */
+    @Test
+    fun `binding de imovel fora do escopo nao aparece, ainda que o device tenha metricas`() {
+        val binding = PropertySensor(propertyId = propertyId, deviceId = deviceId)
+        val metric =
+            SensorMetric(
+                deviceId = deviceId,
+                temperature = 23.9,
+                humidity = 72.3,
+                luminosity = 4095.0,
+                recordedAt = Instant.now(),
+            )
+
+        whenever(propertySensorRepository.findAllByOrderByPropertyIdAsc()).thenReturn(listOf(binding))
+        whenever(propertyRepository.findAllById(setOf(propertyId))).thenReturn(emptyList())
+
+        assertThat(service.findAll(null)).isEmpty()
+
+        verify(sensorMetricRepository, never()).findAllByDeviceIdIn(any())
+    }
+
     @Test
     fun `findByProperty deve lancar excecao quando imovel nao tem sensor vinculado`() {
         whenever(propertySensorRepository.findByPropertyId(propertyId)).thenReturn(Optional.empty())
 
-        assertThrows<RuntimeException> {
+        assertThrows<NotFoundException> {
             service.findByProperty(propertyId, 24)
         }
     }
@@ -242,7 +276,7 @@ class SensorMetricServiceTest {
 
         whenever(propertyRepository.findById(propertyId)).thenReturn(Optional.empty())
 
-        assertThrows<RuntimeException> {
+        assertThrows<NotFoundException> {
             service.bind(request)
         }
     }
@@ -251,6 +285,7 @@ class SensorMetricServiceTest {
     fun `unbind deve remover vinculo existente`() {
         val binding = PropertySensor(propertyId = propertyId, deviceId = deviceId)
 
+        whenever(propertyRepository.findById(propertyId)).thenReturn(Optional.of(visibleProperty("Imovel")))
         whenever(propertySensorRepository.findByPropertyId(propertyId)).thenReturn(Optional.of(binding))
 
         service.unbind(propertyId)
@@ -260,10 +295,28 @@ class SensorMetricServiceTest {
 
     @Test
     fun `unbind deve lancar excecao quando imovel nao tem sensor vinculado`() {
+        whenever(propertyRepository.findById(propertyId)).thenReturn(Optional.of(visibleProperty("Imovel")))
         whenever(propertySensorRepository.findByPropertyId(propertyId)).thenReturn(Optional.empty())
 
-        assertThrows<RuntimeException> {
+        assertThrows<NotFoundException> {
             service.unbind(propertyId)
         }
+    }
+
+    /**
+     * `unbind` valida o imóvel pelo `PropertyRepository` escopado antes de
+     * desvincular. Sem essa linha, o desvinculo funcionaria para o imóvel de
+     * qualquer agência, porque `property_sensor` não carrega escopo.
+     */
+    @Test
+    fun `unbind de imovel fora do escopo aborta sem tocar no vinculo`() {
+        whenever(propertyRepository.findById(propertyId)).thenReturn(Optional.empty())
+
+        assertThrows<NotFoundException> {
+            service.unbind(propertyId)
+        }
+
+        verify(propertySensorRepository, never()).delete(any())
+        verify(propertySensorRepository, never()).findByPropertyId(any())
     }
 }

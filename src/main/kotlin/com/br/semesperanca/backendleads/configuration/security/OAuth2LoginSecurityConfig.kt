@@ -60,44 +60,56 @@ class OAuth2LoginSecurityConfig(
                     .permitAll()
                     .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/error")
                     .permitAll()
+                    // ---------------- raiz ----------------
+                    // FULL_ADMIN é externo ao negócio e não é escopado; ADMIN é o
+                    // branch owner e enxerga a própria rede. Nenhuma outra role
+                    // cria ou remove um responsável.
                     .requestMatchers(HttpMethod.POST, "/auth/register/full-admin")
-                    .hasAnyRole("FULL_ADMIN")
-                    .requestMatchers(HttpMethod.GET, "/real-estate-agents")
+                    .hasRole("FULL_ADMIN")
+                    .requestMatchers("/branch-owners/**")
                     .hasAnyRole("FULL_ADMIN", "ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/real-estate-agents")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN")
-                    .requestMatchers(HttpMethod.GET, "/real-estate-agents/{id}")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN", "REAL_ESTATE_AGENT")
-                    .requestMatchers(HttpMethod.PUT, "/real-estate-agents/{id}")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN")
-                    .requestMatchers(HttpMethod.PATCH, "/real-estate-agents/{id}/toggle-active")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN")
-                    .requestMatchers(HttpMethod.GET, "/managers")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/managers")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN")
-                    .requestMatchers(HttpMethod.GET, "/managers/{id}")
+                    .requestMatchers(HttpMethod.PATCH, "/auth/change-password")
+                    .authenticated()
+                    // ---------------- leitura ----------------
+                    // Leitura é recortada no repositório, não na URL: o papel aqui
+                    // é só o piso, e quem decide *quais* registros é o escopo da
+                    // role. Um corretor entra no seu próprio registro e recebe 404
+                    // no do colega — nunca 403, que confirmaria a existência.
+                    .requestMatchers(HttpMethod.GET, "/branch-offices/**")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.GET, "/real-estate-agents/**")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER", "REAL_ESTATE_AGENT")
+                    .requestMatchers(HttpMethod.GET, "/managers/**")
                     .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
-                    .requestMatchers(HttpMethod.PUT, "/managers/{id}")
+                    .requestMatchers(HttpMethod.GET, "/teams/**", "/leads/**", "/properties/**", "/sensor-property-metrics/**")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER", "REAL_ESTATE_AGENT")
+                    // ---------------- escrita ----------------
+                    // Escrita é `FULL_ADMIN` ou `ADMIN`, e o `@PreAuthorize` do
+                    // service repete a regra: a camada de URL rejeita cedo, a do
+                    // service protege quem chama o método por fora do HTTP.
+                    .requestMatchers(HttpMethod.POST, "/branch-offices", "/real-estate-agents", "/managers")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
+                    .requestMatchers(HttpMethod.PUT, "/branch-offices/**", "/real-estate-agents/**")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
+                    .requestMatchers(HttpMethod.PATCH, "/branch-offices/**", "/real-estate-agents/**", "/managers/**")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
+                    // Transferência de gerente e de lotação mudam a subárvore de
+                    // alguém, então o gerente age apenas sobre si.
+                    .requestMatchers(HttpMethod.PUT, "/managers/**")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
+                    .requestMatchers(HttpMethod.POST, "/teams/**", "/sensor-property-metrics")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
+                    .requestMatchers(HttpMethod.PUT, "/teams/**", "/properties/**")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
+                    .requestMatchers(HttpMethod.PATCH, "/properties/**")
                     .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
                     .requestMatchers(HttpMethod.PUT, "/leads/{id}")
                     .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER", "REAL_ESTATE_AGENT")
-                    .requestMatchers(HttpMethod.PATCH, "/managers/{id}/toggle-active")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN")
-                    .requestMatchers(HttpMethod.PATCH, "/real-estate-agents/{id}/reset-password")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN")
-                    .requestMatchers(HttpMethod.PATCH, "/managers/{id}/reset-password")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN")
-                    .requestMatchers(HttpMethod.DELETE, "/real-estate-agents/{id}")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN")
-                    .requestMatchers(HttpMethod.DELETE, "/managers/{id}")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN")
-                    .requestMatchers(HttpMethod.PATCH, "/auth/change-password")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN", "REAL_ESTATE_AGENT", "MANAGER")
-                    .requestMatchers(HttpMethod.POST, "/sensor-property-metrics")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
-                    .requestMatchers(HttpMethod.DELETE, "/sensor-property-metrics/**")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
+                    // Remoção é só do root: `ON DELETE CASCADE` leva junto gerente,
+                    // corretor, imóvel, sensor e lead do subtree, e não há como
+                    // reverter isso.
+                    .requestMatchers(HttpMethod.DELETE, "/**")
+                    .hasRole("FULL_ADMIN")
                     .anyRequest()
                     .authenticated()
             }.oauth2ResourceServer { oauth2 ->

@@ -13,12 +13,14 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.jpa.domain.Specification
 import java.time.Instant
+import java.util.Optional
 import java.util.UUID
 
 /**
  * `LeadRepository` carrega a única chave de negócio do domínio:
  * `origin_lead_id` é o identificador do portal e a idempotência do
- * `LeadService.receiveLead` depende de `existsByOriginLeadId`.
+ * A busca por `originLeadId` usada pelo `LeadService` é uma `Specification`, e
+ * não um método derivado: só a primeira passa pela `ScopedRepositoryImpl`.
  *
  * `lead.status` tem `CHECK IN ('new','in_progress','converted','lost','archived')`
  * — um teste que passe um status fora da lista pega na hora se essa constraint
@@ -48,6 +50,16 @@ class LeadRepositoryTest : AbstractRepositoryTest() {
      * `real_estate_agent` e `manager`, **não** em `lead` — o `@PreUpdate` é o
      * que existe por isso.
      */
+    /**
+     * Busca por `originLeadId` na forma que a aplicação usa: `Specification` via
+     * `findOne`, que a [ScopedRepositoryImpl] soma à subárvore da role. Um
+     * `findByOriginLeadId` derivado ignoraria o escopo e não apareceria aqui.
+     */
+    private fun buscaPorOrigin(originLeadId: String): Optional<Lead> =
+        repository.findOne(Specification<Lead> { root, _, cb -> cb.equal(root.get<Any>("originLeadId"), originLeadId) })
+
+    private fun porOrigin(originLeadId: String): Lead = buscaPorOrigin(originLeadId).get()
+
     private fun novo(
         originLeadId: String = "OL-1",
         status: String = "new",
@@ -119,7 +131,7 @@ class LeadRepositoryTest : AbstractRepositoryTest() {
         entityManager.flush()
         entityManager.clear()
 
-        val relido = repository.findByOriginLeadId("OL-update").get()
+        val relido = porOrigin("OL-update")
         assertThat(relido.createdAt).isEqualTo(criado)
         assertThat(relido.updatedAt).isAfter(Instant.parse("2020-01-01T00:00:00Z"))
     }
@@ -136,23 +148,24 @@ class LeadRepositoryTest : AbstractRepositoryTest() {
         assertThat(relido.activities.map { it.title }).containsExactly("Visita tecnica")
     }
 
+    /**
+     * A busca por `originLeadId` é `Specification`, e não método derivado, e a
+     * diferença é o escopo: `findByOriginLeadId` era exatamente o que permitia ao
+     * `InsightClient` — que roda `@Async`, sem `SecurityContext` — despachar o
+     * lead de qualquer agência para o serviço de Insight só por causa do
+     * `originLeadId` que vinha no corpo do webhook. `findOne(spec)` passa pela
+     * [ScopedRepositoryImpl], que soma a subárvore da role.
+     */
     @Test
-    fun `existsByOriginLeadId distingue lead novo de lead já recebido`() {
-        repository.save(novo(originLeadId = "OL-42"))
+    fun `busca por originLeadId acha o lead`() {
+        repository.save(novo(originLeadId = "OL-7", name = "Joana"))
 
-        assertThat(repository.existsByOriginLeadId("OL-42")).isTrue()
-        assertThat(repository.existsByOriginLeadId("OL-99")).isFalse()
+        assertThat(porOrigin("OL-7").name).isEqualTo("Joana")
     }
 
     @Test
-    fun `findByOriginLeadId devolve o lead e o absent devolve Optional vazio`() {
-        repository.save(novo(originLeadId = "OL-7", name = "Joana"))
-
-        val encontrado = repository.findByOriginLeadId("OL-7")
-
-        assertThat(encontrado).isPresent
-        assertThat(encontrado.get().name).isEqualTo("Joana")
-        assertThat(repository.findByOriginLeadId("OL-inexistente")).isEmpty
+    fun `busca por originLeadId de lead inexistente devolve vazio`() {
+        assertThat(buscaPorOrigin("OL-inexistente")).isEmpty()
     }
 
     /**
@@ -171,7 +184,7 @@ class LeadRepositoryTest : AbstractRepositoryTest() {
     fun `status dentro do CHECK é aceito`() {
         repository.saveAndFlush(novo(originLeadId = "OL-ok", status = "converted"))
 
-        assertThat(repository.findByOriginLeadId("OL-ok").get().status).isEqualTo("converted")
+        assertThat(porOrigin("OL-ok").status).isEqualTo("converted")
     }
 
     @Test

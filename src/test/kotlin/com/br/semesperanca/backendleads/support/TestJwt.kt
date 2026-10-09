@@ -17,8 +17,15 @@ import javax.crypto.SecretKey
  * do `application-test.yml` e com o mesmo `iss` do `app.jwt.issuer`, então
  * `CustomJwtDecoder` cai no `localDecoder` (o do app), o
  * `JwtValidator` de issuer passa, e o
- * `CustomJwtAuthenticationConverter` lê a claim `role`. O que o teste exercita
- * de fato é a cadeia, não um atalho de autenticação.
+ * `CustomJwtAuthenticationConverter` resolve o usuário no banco. O que o teste
+ * exercita de fato é a cadeia, não um atalho de autenticação.
+ *
+ * **O `sub` tem de ser o id de um usuário que exista em `users`.** O conversor
+ * não confia na claim `role` — ele relê a role do banco, justamente para que
+ * uma promoção ou demissão valha no request seguinte em vez de esperar o token
+ * expirar. Um token com `sub` de usuário inexistente é recusado com
+ * `BadCredentialsException` e a resposta é 401, não 403: é por isso que
+ * [subject] é parâmetro e não um valor fixo.
  */
 object TestJwt {
     /** `app.jwt.issuer` do `application.yml`: `${JWT_ISSUER:http://backend-leads.local}`. */
@@ -33,8 +40,12 @@ object TestJwt {
     val outraChave: SecretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVowMTIzNDU="))
 
     /**
-     * @param role claim `role`; `null` gera um token sem papel, que o
-     *   `CustomJwtAuthenticationConverter` traduz em lista de autoridades vazia.
+     * @param role claim `role`. O conversor **ignora** esta claim; ela existe
+     *   aqui para os testes que precisam provar que a ignoram, e para
+     *   [NOT_A_UUID_SUBJECT].
+     * @param subject o id de `users` do usuário. Fora do app-issuer é irrelevante,
+     *   porque o token do Google tem `sub` do Google e quem resolve a identidade é
+     *   o e-mail.
      * @param issuer `iss`; um valor fora de [ISSUER] e de
      *   `OAUTH2_ISSUER_URI` faz o `CustomJwtDecoder` estourar
      *   `BadJwtException` antes de qualquer validação.
@@ -66,9 +77,25 @@ object TestJwt {
 
     fun bearer(
         role: String?,
+        subject: String = "3f8c1b62-9d0e-4a51-b0f2-6c1a5d7e9b34",
         email: String = "user@example.com",
         issuer: String = ISSUER,
         expiresIn: Duration = Duration.ofHours(1),
         key: SecretKey = defaultKey,
-    ): String = "Bearer " + token(role, email = email, issuer = issuer, expiresIn = expiresIn, key = key)
+    ): String =
+        "Bearer " +
+            token(
+                role = role,
+                subject = subject,
+                email = email,
+                issuer = issuer,
+                expiresIn = expiresIn,
+                key = key,
+            )
+
+    /** `sub` que não é UUID: o conversor recusa antes de tocar no banco. */
+    const val NOT_A_UUID_SUBJECT: String = "sub-nao-e-uuid"
+
+    /** `sub` sintaticamente válido mas sem linha em `users`: `BadCredentialsException`. */
+    const val UNKNOWN_UUID_SUBJECT: String = "11111111-2222-3333-4444-555555555555"
 }

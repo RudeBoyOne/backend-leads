@@ -4,8 +4,10 @@ import com.br.semesperanca.backendleads.application.model.LeadDTO
 import com.br.semesperanca.backendleads.application.model.LeadReceivedNotificationDTO
 import com.br.semesperanca.backendleads.application.model.request.UpdateLeadRequest
 import com.br.semesperanca.backendleads.configuration.MailProperties
+import com.br.semesperanca.backendleads.configuration.exception.NotFoundException
 import com.br.semesperanca.backendleads.domain.model.Lead
 import com.br.semesperanca.backendleads.domain.repository.LeadRepository
+import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository
 import com.br.semesperanca.backendleads.support.SpecProbe
 import com.br.semesperanca.backendleads.support.TestFixtures
 import org.assertj.core.api.Assertions.assertThat
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.Mockito.lenient
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeastOnce
@@ -41,6 +44,8 @@ class LeadServiceTest {
 
     @Mock private lateinit var insightClient: InsightClient
 
+    @Mock private lateinit var realEstateAgentRepository: RealEstateAgentRepository
+
     private val mailProperties = MailProperties()
     private lateinit var service: LeadService
 
@@ -49,21 +54,35 @@ class LeadServiceTest {
 
     @BeforeEach
     fun setUp() {
-        service = LeadService(leadRepository, emailService, mailProperties, insightClient)
+        service = LeadService(leadRepository, emailService, mailProperties, insightClient, realEstateAgentRepository)
     }
 
     @Nested
     inner class ReceiveLead {
         private val notification = LeadReceivedNotificationDTO("99999999-9999-9999-9999-999999999999", "origin-1", "Zapimoveis")
 
+        private val lead = TestFixtures.lead(originLeadId = "origin-1")
+
+        /**
+         * `lenient` porque o caso do lead fora do escopo substitui o stub por
+         * `Optional.empty()`; sem isso o `MockitoExtension` acusaria o stub do
+         * `@BeforeEach` como não usado naquele teste.
+         */
+        @BeforeEach
+        fun stubLeadNoEscopo() {
+            lenient()
+                .`when`(leadRepository.findOne(any<Specification<Lead>>()))
+                .thenReturn(Optional.of(lead))
+        }
+
         @Test
-        fun `notifica o e-mail e dispara a criacao do insight`() {
+        fun `notifica o e-mail e despacha o lead carregado pelo repositorio escopado`() {
             mailProperties.notifyTo = "corretores@imobiliaria.com.br"
 
             service.receiveLead(notification)
 
             verify(emailService).sendLeadReceived(notification, "corretores@imobiliaria.com.br")
-            verify(insightClient).createInsight("origin-1")
+            verify(insightClient).createInsight(lead)
         }
 
         @Test
@@ -73,6 +92,42 @@ class LeadServiceTest {
             service.receiveLead(notification)
 
             verify(emailService).sendLeadReceived(notification, "")
+        }
+
+        /**
+         * O `originLeadId` vem do corpo do webhook, então qualquer usuário
+         * autenticado pode nomear o lead de outra agência. A resolução é por
+         * `findOne(spec)` — a sobrecarga que recebe `Specification` e por isso
+         * recebe também a subárvore da role — e `findOne` vazio é o mesmo
+         * "não existe" e "não é seu". Nenhum dado alheio sai daqui.
+         *
+         * OInsightClient é `@Async` e a thread dele não tem `SecurityContext`;
+         * resolver dentro dele seria uma consulta sem principal, e método
+         * derivado não passa pela base escopada.
+         */
+        @Test
+        fun `lead fora do escopo aborta com NotFoundException e nada e enviado`() {
+            whenever(leadRepository.findOne(any<Specification<Lead>>())).thenReturn(Optional.empty())
+
+            assertThatThrownBy { service.receiveLead(notification) }
+                .isInstanceOf(NotFoundException::class.java)
+                .hasMessage("Lead não encontrado")
+
+            verify(insightClient, never()).createInsight(any())
+        }
+
+        /**
+         * A busca é uma `Specification` sobre `originLeadId`, e não um método
+         * derivado: método derivado não passa pela [ScopedRepositoryImpl] e a
+         * chamada sairia sem escopo.
+         */
+        @Test
+        fun `a busca do lead e uma Specification, e nao um metodo derivado`() {
+            service.receiveLead(notification)
+
+            val captor = argumentCaptor<Specification<Lead>>()
+            verify(leadRepository).findOne(captor.capture())
+            assertThat(captor.firstValue).isNotNull()
         }
     }
 
@@ -148,19 +203,23 @@ class LeadServiceTest {
                 .containsExactly("like(%%)", "like(%%)")
         }
 
+        /**
+         * O que importa aqui é a quantidade de filtros de folha, não o
+         * aninhamento: a Specification começa em `Specification.unrestricted()`
+         * e cada filtro entra por `spec.and { }`, então a quantidade de `cb.and`
+         * depende de como a composição é aninhada — detalhe de implementação do
+         * Spring Data, não do serviço.
+         */
         @Test
-        fun `todos os filtros juntos viram quatro restricoes de folha`() {
+        fun `todos os filtros juntos viram quatro filtros de folha`() {
             val trace = traceOf(status = "new", corretorId = 1L, origin = "Zapimoveis", search = "maria")
 
-            // Diferente dos outros servicos, aqui a Specification e composta com
-            // `spec.and { }`, entao cada etapa gera um `and` aninhado de 2
-            // argumentos. O que importa e a quantidade de filtros de folha.
             assertThat(trace.operations)
                 .containsSubsequence("equal(new)", "equal(1)", "equal(Zapimoveis)")
                 .containsOnlyOnce("equal(new)")
             assertThat(trace.operations.filter { it.startsWith("like(") })
                 .containsExactly("like(%maria%)", "like(%maria%)")
-            assertThat(trace.andValues).hasSize(4)
+            assertThat(trace.operations.count { it.startsWith("equal(") }).isEqualTo(3)
         }
     }
 
@@ -187,13 +246,18 @@ class LeadServiceTest {
             assertThat(dto.realEstateAgencyId).isEqualTo(TestFixtures.AGENCY_ID)
         }
 
+        /**
+         * 404 e não 400: `findById` é escopado, e um lead de outra agência sai
+         * daqui como `Optional.empty()`. Um id inexistente e um id fora do escopo
+         * precisam responder igual — 403 confirmaria a existência do registro.
+         */
         @Test
-        fun `id inexistente vira IllegalArgumentException`() {
+        fun `id fora do escopo vira NotFoundException`() {
             whenever(leadRepository.findById(leadId)).thenReturn(Optional.empty())
 
             assertThatThrownBy { service.getById(leadId) }
-                .isInstanceOf(IllegalArgumentException::class.java)
-                .hasMessage("this id dont exist")
+                .isInstanceOf(NotFoundException::class.java)
+                .hasMessage("Lead não encontrado")
         }
     }
 
@@ -209,6 +273,8 @@ class LeadServiceTest {
                 @Suppress("UNCHECKED_CAST")
                 (invocation.getArgument<Lead>(0))
             }
+            whenever(realEstateAgentRepository.findById(agentId))
+                .thenReturn(Optional.of(TestFixtures.realEstateAgent().apply { id = agentId }))
 
             val dto =
                 service.update(
@@ -277,15 +343,41 @@ class LeadServiceTest {
         }
 
         @Test
-        fun `id inexistente nao salva nada`() {
+        fun `id fora do escopo nao salva nada`() {
             whenever(leadRepository.findById(leadId)).thenReturn(Optional.empty())
 
             assertThatThrownBy {
                 service.update(leadId, UpdateLeadRequest("x", null, null, null, null, null, null, null, null, null))
-            }.isInstanceOf(IllegalArgumentException::class.java)
-                .hasMessage("this id dont exist")
+            }.isInstanceOf(NotFoundException::class.java)
+                .hasMessage("Lead não encontrado")
 
             verify(leadRepository, never()).save(any())
+        }
+
+        /**
+         * O corretor do lead passa pelo `RealEstateAgentRepository` escopado: um
+         * corretor de outra agência não é encontrado, e `orElse(null)` deixa o
+         * lead sem dono em vez de_null no banco. É o que impede desviar um lead
+         * para o corretor de outra agência.
+         */
+        @Test
+        fun `corretor fora do escopo deixa o lead sem dono, em vez de null no banco`() {
+            val lead = TestFixtures.lead(id = leadId)
+            val agentId = UUID.randomUUID()
+            whenever(leadRepository.findById(leadId)).thenReturn(Optional.of(lead))
+            whenever(leadRepository.save(any<Lead>())).doAnswer { invocation ->
+                @Suppress("UNCHECKED_CAST")
+                (invocation.getArgument<Lead>(0))
+            }
+            whenever(realEstateAgentRepository.findById(agentId)).thenReturn(Optional.empty())
+
+            val dto =
+                service.update(
+                    leadId,
+                    UpdateLeadRequest("x", null, null, null, null, null, null, null, agentId, null),
+                )
+
+            assertThat(dto.realEstateAgentId).isNull()
         }
     }
 

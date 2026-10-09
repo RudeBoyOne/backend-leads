@@ -68,7 +68,14 @@ class ActivityRepositoryTest : AbstractRepositoryTest() {
 
     @Test
     fun `a atividade guarda o id do lead e do imóvel`() {
-        val imovel = propertyRepository.save(TestFixtures.property(id = null, realEstateAgencyId = agencyId))
+        // `property.branch_office_id` é NOT NULL: o imóvel pertence a uma filial,
+        // e é por ela que o escopo o alcança. A filial vem com responsável porque
+        // `branch_office.branch_owner_id` também é NOT NULL.
+        val filial = insertBranchOffice(agencyId, name = "Filial Atividades")
+        val imovel =
+            propertyRepository.save(
+                TestFixtures.property(id = null, realEstateAgencyId = agencyId, branchOffice = filial),
+            )
 
         val saved = repository.save(nova(property = imovel))
 

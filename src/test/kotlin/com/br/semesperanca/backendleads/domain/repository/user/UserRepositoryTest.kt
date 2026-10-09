@@ -27,13 +27,15 @@ import java.util.UUID
  *
  * `users.role_id` é `NOT NULL`, então todo agente/gerente precisa de um `Role`
  * de verdade — os papéis do `V001` servem.
+ *
+ * Os dois admins do `V017` ficam **só** em `users`: a raiz da herança é
+ * concreta, então "FULL_ADMIN não é nenhum dos três subtipos" é legível sem a
+ * linha de `real_estate_agent` que a versão anterior semeava só para o ORM ter o
+ * que instanciar.
  */
 class UserRepositoryTest : AbstractRepositoryTest() {
     @Autowired
     private lateinit var repository: UserRepository
-
-    @Autowired
-    private lateinit var roleRepository: RoleRepository
 
     @Autowired
     private lateinit var managerRepository: ManagerRepository
@@ -96,13 +98,18 @@ class UserRepositoryTest : AbstractRepositoryTest() {
         assertThat(entidadeNaTabelaFilha("manager", salvo.id!!)).isFalse()
     }
 
+    /**
+     * `created_at` é `updatable = false`, então sobrescrevê-lo no `@PrePersist`
+     * faria o Hibernate recusar o insert. O callback só preenche quando vem nulo,
+     * como em `Property` e `BranchOffice`, e este teste fixa esse contrato.
+     */
     @Test
-    fun `o prePersist do User ignora o createdAt que veio preenchido`() {
+    fun `o prePersist do User preserva o createdAt que veio preenchido`() {
         val velho = java.time.LocalDateTime.of(2020, 1, 1, 8, 0)
 
         val salvo = repository.save(agente().apply { createdAt = velho })
 
-        assertThat(salvo.createdAt).isNotEqualTo(velho)
+        assertThat(salvo.createdAt).isEqualTo(velho)
     }
 
     @Test
@@ -215,9 +222,9 @@ class UserRepositoryTest : AbstractRepositoryTest() {
     @Test
     fun `o branchOffice do gerente sobrevive ao round trip e fica na tabela users`() {
         val agencyId = insertAgency()
-        val filial = BranchOffice(realEstateAgencyId = agencyId, name = "Filial Centro")
-        entityManager.persist(filial)
-        entityManager.flush()
+        // `branch_office.branch_owner_id` é NOT NULL: a filial sempre tem
+        // responsável, e é ele que dá sentido à subárvore do escopo.
+        val filial = insertBranchOffice(agencyId, name = "Filial Centro")
 
         val salvo = repository.save(gerente(agencyId = agencyId, branchOffice = filial))
         entityManager.flush()

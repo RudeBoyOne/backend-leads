@@ -2,7 +2,9 @@ package com.br.semesperanca.backendleads.application.model.request
 
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import java.util.UUID
 
 data class CreateRealEstateAgentRequest(
     @field:NotBlank(message = "Nome é obrigatório")
@@ -16,5 +18,10 @@ data class CreateRealEstateAgentRequest(
     val password: String,
     @field:NotBlank(message = "CRECI é obrigatório")
     val creci: String,
-    val branchOfficeId: java.util.UUID?,
+    /**
+     * Obrigatória pela mesma razão do gerente: a lotação define a agência (que é
+     * `NOT NULL` em `users`) e define a qual subárvore o corretor pertence.
+     */
+    @field:NotNull(message = "branchOfficeId é obrigatório")
+    val branchOfficeId: UUID,
 )

@@ -1,5 +1,6 @@
 package com.br.semesperanca.backendleads.domain.repository
 
+import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.model.Lead
 import com.br.semesperanca.backendleads.domain.model.Property
 import com.br.semesperanca.backendleads.support.AbstractRepositoryTest
@@ -34,10 +35,21 @@ class PropertyRepositoryTest : AbstractRepositoryTest() {
 
     private lateinit var outraAgencyId: UUID
 
+    /**
+     * Filial de cada agência. `property.branch_office_id` é `NOT NULL` porque é
+     * por ela que o escopo percorre — sem filial o imóvel não pertence a nenhuma
+     * subárvore, e o banco recusaria o `save`.
+     */
+    private lateinit var filial: BranchOffice
+
+    private lateinit var filialOutra: BranchOffice
+
     @BeforeEach
     fun setUp() {
         agencyId = insertAgency("Imob A")
         outraAgencyId = insertAgency("Imob B")
+        filial = insertBranchOffice(agencyId, name = "Filial A")
+        filialOutra = insertBranchOffice(outraAgencyId, name = "Filial B")
     }
 
     /** `Activity.lead` é obrigatório, então todo imóvel com atividade tem um lead por trás. */
@@ -50,6 +62,7 @@ class PropertyRepositoryTest : AbstractRepositoryTest() {
 
     private fun novo(
         agency: UUID = agencyId,
+        office: BranchOffice? = filial,
         title: String = "Apartamento",
         status: String? = "available",
         active: Boolean = true,
@@ -60,6 +73,7 @@ class PropertyRepositoryTest : AbstractRepositoryTest() {
         TestFixtures.property(
             id = null,
             realEstateAgencyId = agency,
+            branchOffice = office,
             title = title,
             status = status,
             active = active,
@@ -82,7 +96,7 @@ class PropertyRepositoryTest : AbstractRepositoryTest() {
     fun `findByRealEstateAgencyId devolve só os imóveis da agência`() {
         repository.save(novo(title = "A1"))
         repository.save(novo(title = "A2"))
-        repository.save(novo(agency = outraAgencyId, title = "B1"))
+        repository.save(novo(agency = outraAgencyId, office = filialOutra, title = "B1"))
 
         val daAgencia = repository.findByRealEstateAgencyId(agencyId)
 
@@ -127,7 +141,7 @@ class PropertyRepositoryTest : AbstractRepositoryTest() {
     fun `Specification por status e agency compõe os dois predicados`() {
         repository.save(novo(title = "disponivel", status = "available"))
         repository.save(novo(title = "vendido", status = "sold"))
-        repository.save(novo(agency = outraAgencyId, title = "de-outra", status = "available"))
+        repository.save(novo(agency = outraAgencyId, office = filialOutra, title = "de-outra", status = "available"))
 
         val spec = statusSpec("available").and(agencySpec(agencyId))
 

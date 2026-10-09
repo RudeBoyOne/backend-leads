@@ -21,10 +21,23 @@ import org.springframework.security.core.userdetails.UserDetails
 import java.time.LocalDateTime
 import java.util.UUID
 
+/**
+ * Raiz da herança `JOINED` das três pessoas do sistema: [Manager],
+ * [RealEstateAgent] e [BranchOwner]. A tabela filha guarda só o que `users` não
+ * tem — CRECI, ou telefone.
+ *
+ * A classe é **concreta**, e essa é a parte que importa: `FULL_ADMIN` é pessoa
+ * externa ao negócio, não é corretor e não tem CRECI, então a linha dele em
+ * `users` não tem par em nenhuma tabela filha. Se a raiz fosse abstrata, o
+ * Hibernate não teria o que instanciar ao ler essa linha, e o `login` do root
+ * quebraria com `AssertionError` dentro do inicializador de entidade. Ser
+ * concreta é o que faz "não é nenhum dos três subtipos" ser um estado
+ * representável em vez de uma linha que o ORM não sabe ler.
+ */
 @Entity
 @Table(name = "\"users\"")
 @Inheritance(strategy = InheritanceType.JOINED)
-abstract class User(
+open class User(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     var id: UUID? = null,
@@ -47,9 +60,18 @@ abstract class User(
     @Column(name = "updated_at")
     var updatedAt: LocalDateTime? = null,
 ) : UserDetails {
+    /**
+     * `createdAt` só é preenchido quando vem nulo, como em `Property` e
+     * `BranchOffice`. Sobrescrever incondicionalmente descartaria uma data
+     * fornecida de propósito — e `created_at` é `updatable = false`, então a
+     * intenção de preservar é justamente a que o mapeamento expressa.
+     * `updatedAt` é sempre reescrito, porque é o que ele significa.
+     */
     @PrePersist
     fun prePersist() {
-        createdAt = LocalDateTime.now()
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now()
+        }
         updatedAt = LocalDateTime.now()
     }
 

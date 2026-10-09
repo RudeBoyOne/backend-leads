@@ -37,6 +37,13 @@ class ManagerControllerTest : AbstractControllerSlice() {
 
     @Autowired private lateinit var mvc: MockMvcTester
 
+    /**
+     * Filial é `NOT NULL` e `@NotNull` no create e no update. O id não é validado
+     * aqui: o slice não tem repositório, e a existência da filial é problema do
+     * `BranchOfficeRepository` escopado, não do binding do JSON.
+     */
+    private val branchOfficeId = UUID.randomUUID()
+
     @Test
     fun `GET embrulha os query params em UserFilterRequest e repassa a pagina`() {
         val item = TestFixtures.managerResponse()
@@ -84,7 +91,7 @@ class ManagerControllerTest : AbstractControllerSlice() {
             .uri("/managers")
             .contentType(MediaType.APPLICATION_JSON)
             .content(
-                """{"name": "Bruno Lima", "email": "bruno@example.com", "password": "segredo123", "branchOffice": "Centro"}""",
+                """{"name": "Bruno Lima", "email": "bruno@example.com", "password": "segredo123", "branchOfficeId": "$branchOfficeId"}""",
             ).exchange()
             .assertThat()
             .hasStatus(201)
@@ -98,7 +105,7 @@ class ManagerControllerTest : AbstractControllerSlice() {
             .post()
             .uri("/managers")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"name": "Bruno", "email": "bruno@example.com", "password": "123"}""")
+            .content("""{"name": "Bruno", "email": "bruno@example.com", "password": "123", "branchOfficeId": "$branchOfficeId"}""")
             .exchange()
             .assertThat()
             .hasStatus(400)
@@ -113,7 +120,7 @@ class ManagerControllerTest : AbstractControllerSlice() {
             .post()
             .uri("/managers")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"name": "B", "email": "b@example.com", "password": "segredo123"}""")
+            .content("""{"name": "B", "email": "b@example.com", "password": "segredo123", "branchOfficeId": "$branchOfficeId"}""")
             .exchange()
             .assertThat()
             .hasStatus(400)
@@ -157,7 +164,7 @@ class ManagerControllerTest : AbstractControllerSlice() {
             .put()
             .uri("/managers/$id")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"name": "Bruno Costa", "email": "bruno@example.com", "branchOffice": "Zona Sul"}""")
+            .content("""{"name": "Bruno Costa", "email": "bruno@example.com", "branchOfficeId": "$branchOfficeId"}""")
             .exchange()
             .assertThat()
             .hasStatus(200)
@@ -170,7 +177,7 @@ class ManagerControllerTest : AbstractControllerSlice() {
             .put()
             .uri("/managers/${UUID.randomUUID()}")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"name": "Bruno", "email": "bruno@@example"}""")
+            .content("""{"name": "Bruno", "email": "bruno@@example", "branchOfficeId": "$branchOfficeId"}""")
             .exchange()
             .assertThat()
             .hasStatus(400)

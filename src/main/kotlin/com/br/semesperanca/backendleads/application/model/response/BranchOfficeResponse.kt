@@ -6,6 +6,7 @@ import java.util.UUID
 data class BranchOfficeResponse(
     val id: UUID?,
     val realEstateAgencyId: UUID?,
+    val branchOwnerId: UUID?,
     val name: String?,
     val address: String?,
     val phone: String?,

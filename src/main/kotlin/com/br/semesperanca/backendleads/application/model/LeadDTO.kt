@@ -59,7 +59,7 @@ data class LeadDTO(
                 temperature = lead.temperature!!,
                 transactionType = lead.transactionType!!,
                 realEstateAgencyId = lead.realEstateAgencyId,
-                realEstateAgentId = lead.realEstateAgentId,
+                realEstateAgentId = lead.realEstateAgent?.id,
                 portalId = lead.portalId,
                 funnelStageId = lead.funnelStageId,
                 source = lead.source,
@@ -84,7 +84,9 @@ data class LeadDTO(
                 temperature = dto.temperature,
                 transactionType = dto.transactionType,
                 realEstateAgencyId = dto.realEstateAgencyId,
-                realEstateAgentId = dto.realEstateAgentId,
+                // A association `realEstateAgent` fica de fora: este mapper é
+                // estático e não tem repositório para resolver o id em entidade.
+                // Quem cria lead resolve o corretor e passa a association.
                 portalId = dto.portalId,
                 funnelStageId = dto.funnelStageId,
                 source = dto.source,

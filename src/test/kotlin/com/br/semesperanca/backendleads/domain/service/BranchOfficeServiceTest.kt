@@ -2,8 +2,11 @@ package com.br.semesperanca.backendleads.domain.service
 
 import com.br.semesperanca.backendleads.application.model.request.CreateBranchOfficeRequest
 import com.br.semesperanca.backendleads.application.model.request.UpdateBranchOfficeRequest
+import com.br.semesperanca.backendleads.configuration.exception.NotFoundException
 import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.repository.BranchOfficeRepository
+import com.br.semesperanca.backendleads.domain.repository.BranchOwnerRepository
+import com.br.semesperanca.backendleads.support.TestFixtures
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -26,21 +29,26 @@ import java.util.UUID
 class BranchOfficeServiceTest {
     @Mock private lateinit var repository: BranchOfficeRepository
 
+    @Mock private lateinit var branchOwnerRepository: BranchOwnerRepository
+
     private lateinit var service: BranchOfficeService
 
     private val agencyId = UUID.randomUUID()
 
     private val filialId = UUID.randomUUID()
 
+    private val owner = TestFixtures.branchOwner(realEstateAgencyId = agencyId)
+
     @BeforeEach
     fun setUp() {
-        service = BranchOfficeService(repository)
+        service = BranchOfficeService(repository, branchOwnerRepository)
     }
 
     private fun filial(active: Boolean = true): BranchOffice =
         BranchOffice(
             id = filialId,
             realEstateAgencyId = agencyId,
+            branchOwner = owner,
             name = "Filial Centro",
             address = "Av. Paulista, 1000",
             phone = "1133334444",
@@ -53,17 +61,21 @@ class BranchOfficeServiceTest {
             (invocation.getArgument<BranchOffice>(0)).apply { if (id == null) id = filialId }
         }
 
+    private fun request(
+        name: String = "Filial Centro",
+        address: String? = "Av. Paulista, 1000",
+        phone: String? = "1133334444",
+    ) = CreateBranchOfficeRequest(name, address, phone, owner.id!!)
+
     @Nested
     inner class Create {
         @Test
         fun `cria a filial ativa com os dados do request`() {
+            whenever(branchOwnerRepository.findById(owner.id!!)).thenReturn(Optional.of(owner))
             whenever(repository.existsByRealEstateAgencyIdAndName(agencyId, "Filial Centro")).thenReturn(false)
             saveGeneratingId()
 
-            val response =
-                service.create(
-                    CreateBranchOfficeRequest("Filial Centro", "Av. Paulista, 1000", "1133334444", agencyId),
-                )
+            val response = service.create(request())
 
             assertThat(response.id).isEqualTo(filialId)
             assertThat(response.realEstateAgencyId).isEqualTo(agencyId)
@@ -71,23 +83,78 @@ class BranchOfficeServiceTest {
             assertThat(response.active).isTrue()
         }
 
+        /**
+         * `branch_office.branch_owner_id` e `NOT NULL` com `UNIQUE`. Sem gravar o
+         * dono, a filial nao teria quem a administrasse e o escopo de branch owner
+         * — que percorre exatamente `filial -> responsavel` — nao acharia ela.
+         */
+        @Test
+        fun `a filial nasce com o responsavel resolvido pelo request`() {
+            whenever(branchOwnerRepository.findById(owner.id!!)).thenReturn(Optional.of(owner))
+            whenever(repository.existsByRealEstateAgencyIdAndName(agencyId, "Filial Centro")).thenReturn(false)
+            saveGeneratingId()
+
+            val response = service.create(request())
+
+            val captor = argumentCaptor<BranchOffice>()
+            verify(repository).save(captor.capture())
+            assertThat(captor.firstValue.branchOwner?.id).isEqualTo(owner.id)
+            assertThat(response.branchOwnerId).isEqualTo(owner.id)
+        }
+
+        /**
+         * Filial e responsavel pertencem a mesma agencia. Derivar a agencia do dono
+         * elimina o par de ids que divergiria — e a divergencia apareceria como
+         * uma filial de uma agencia que o escopo do dono nao alcanca.
+         */
+        @Test
+        fun `a agencia vem do responsavel, e nao do corpo do request`() {
+            whenever(branchOwnerRepository.findById(owner.id!!)).thenReturn(Optional.of(owner))
+            whenever(repository.existsByRealEstateAgencyIdAndName(agencyId, "Filial Centro")).thenReturn(false)
+            saveGeneratingId()
+
+            service.create(request())
+
+            val captor = argumentCaptor<BranchOffice>()
+            verify(repository).save(captor.capture())
+            assertThat(captor.firstValue.realEstateAgencyId).isEqualTo(owner.realEstateAgencyId)
+        }
+
+        /**
+         * O `findById` do responsavel e escopado: um branch owner que se atribua a
+         * um id de outro nao encontra e a criacao morre em 404. A autorizacao sai
+         * da consulta, sem nenhum `if` de papel no servico.
+         */
+        @Test
+        fun `responsavel fora do escopo do branch owner aborta com 404`() {
+            whenever(branchOwnerRepository.findById(owner.id!!)).thenReturn(Optional.empty())
+
+            assertThatThrownBy { service.create(request()) }
+                .isInstanceOf(NotFoundException::class.java)
+                .hasMessage("Responsável não encontrado")
+
+            verify(repository, never()).save(any<BranchOffice>())
+        }
+
         @Test
         fun `nome repetido na mesma agencia aborta antes do save`() {
+            whenever(branchOwnerRepository.findById(owner.id!!)).thenReturn(Optional.of(owner))
             whenever(repository.existsByRealEstateAgencyIdAndName(agencyId, "Filial Centro")).thenReturn(true)
 
-            assertThatThrownBy {
-                service.create(CreateBranchOfficeRequest("Filial Centro", null, null, agencyId))
-            }.isInstanceOf(RuntimeException::class.java).hasMessage("Filial já cadastrada nesta agência")
+            assertThatThrownBy { service.create(request()) }
+                .isInstanceOf(IllegalStateException::class.java)
+                .hasMessage("Já existe uma filial com este nome nesta agência")
 
             verify(repository, never()).save(any())
         }
 
         @Test
         fun `nao consulta o nome repetido quando a agencia e outra`() {
+            whenever(branchOwnerRepository.findById(owner.id!!)).thenReturn(Optional.of(owner))
             whenever(repository.existsByRealEstateAgencyIdAndName(eq(agencyId), any())).thenReturn(false)
             saveGeneratingId()
 
-            service.create(CreateBranchOfficeRequest("Filial Norte", null, null, agencyId))
+            service.create(request(name = "Filial Norte", address = null, phone = null))
 
             verify(repository).existsByRealEstateAgencyIdAndName(agencyId, "Filial Norte")
         }
@@ -104,14 +171,15 @@ class BranchOfficeServiceTest {
             assertThat(response.id).isEqualTo(filialId)
             assertThat(response.address).isEqualTo("Av. Paulista, 1000")
             assertThat(response.phone).isEqualTo("1133334444")
+            assertThat(response.branchOwnerId).isEqualTo(owner.id)
         }
 
         @Test
-        fun `filial inexistente aborta com mensagem de dominio`() {
+        fun `filial inexistente aborta com NotFoundException`() {
             whenever(repository.findById(filialId)).thenReturn(Optional.empty())
 
             assertThatThrownBy { service.findById(filialId) }
-                .isInstanceOf(RuntimeException::class.java)
+                .isInstanceOf(NotFoundException::class.java)
                 .hasMessage("Filial não encontrada")
         }
 
@@ -141,14 +209,20 @@ class BranchOfficeServiceTest {
             assertThat(response.phone).isEqualTo("1144445555")
         }
 
+        /**
+         * O `update` nao aceita `branchOwnerId`: trocar o responsavel de uma filial
+         * reescreve a subarvore de quem responde por ela, e isso e uma operacao do
+         * root, nao um detalhe do cadastro.
+         */
         @Test
-        fun `update nao mexe em agency nem em active`() {
+        fun `update nao mexe em agency, em responsavel nem em active`() {
             whenever(repository.findById(filialId)).thenReturn(Optional.of(filial(active = false)))
             saveGeneratingId()
 
             val response = service.update(filialId, UpdateBranchOfficeRequest("Filial Sul", null, null))
 
             assertThat(response.realEstateAgencyId).isEqualTo(agencyId)
+            assertThat(response.branchOwnerId).isEqualTo(owner.id)
             assertThat(response.active).isFalse()
         }
 
@@ -157,7 +231,7 @@ class BranchOfficeServiceTest {
             whenever(repository.findById(filialId)).thenReturn(Optional.empty())
 
             assertThatThrownBy { service.update(filialId, UpdateBranchOfficeRequest("Filial Sul", null, null)) }
-                .isInstanceOf(RuntimeException::class.java)
+                .isInstanceOf(NotFoundException::class.java)
                 .hasMessage("Filial não encontrada")
 
             verify(repository, never()).save(any())
@@ -177,7 +251,7 @@ class BranchOfficeServiceTest {
             whenever(repository.findById(filialId)).thenReturn(Optional.empty())
 
             assertThatThrownBy { service.toggleActive(filialId) }
-                .isInstanceOf(RuntimeException::class.java)
+                .isInstanceOf(NotFoundException::class.java)
                 .hasMessage("Filial não encontrada")
 
             verify(repository, never()).save(any())
@@ -200,10 +274,10 @@ class BranchOfficeServiceTest {
             whenever(repository.findById(filialId)).thenReturn(Optional.empty())
 
             assertThatThrownBy { service.delete(filialId) }
-                .isInstanceOf(RuntimeException::class.java)
+                .isInstanceOf(NotFoundException::class.java)
                 .hasMessage("Filial não encontrada")
 
-            verify(repository, never()).delete(any())
+            verify(repository, never()).delete(any<BranchOffice>())
         }
     }
 
@@ -211,7 +285,7 @@ class BranchOfficeServiceTest {
     inner class BranchOfficeLifecycle {
         @Test
         fun `prePersist e preUpdate do BranchOffice preenchem os timestamps`() {
-            val nova = BranchOffice(realEstateAgencyId = agencyId, name = "Filial Nova")
+            val nova = BranchOffice(realEstateAgencyId = agencyId, branchOwner = owner, name = "Filial Nova")
 
             nova.prePersist()
             assertThat(nova.createdAt).isNotNull()
@@ -225,7 +299,7 @@ class BranchOfficeServiceTest {
         @Test
         fun `prePersist nao sobrescreve um createdAt que ja veio preenchido`() {
             val anterior = java.time.LocalDateTime.of(2020, 1, 1, 8, 0)
-            val comData = BranchOffice(realEstateAgencyId = agencyId, name = "Filial Antiga", createdAt = anterior)
+            val comData = BranchOffice(realEstateAgencyId = agencyId, branchOwner = owner, name = "Filial Antiga", createdAt = anterior)
 
             comData.prePersist()
 
@@ -234,10 +308,11 @@ class BranchOfficeServiceTest {
 
         @Test
         fun `save persiste os campos vindos do request`() {
+            whenever(branchOwnerRepository.findById(owner.id!!)).thenReturn(Optional.of(owner))
             whenever(repository.existsByRealEstateAgencyIdAndName(any(), any())).thenReturn(false)
             saveGeneratingId()
 
-            service.create(CreateBranchOfficeRequest("Filial Oeste", "Rua Bela Vista, 9", "1155556666", agencyId))
+            service.create(request(name = "Filial Oeste", address = "Rua Bela Vista, 9", phone = "1155556666"))
 
             val captor = argumentCaptor<BranchOffice>()
             verify(repository).save(captor.capture())

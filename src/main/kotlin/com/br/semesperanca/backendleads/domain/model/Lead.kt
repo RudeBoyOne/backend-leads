@@ -1,5 +1,6 @@
 package com.br.semesperanca.backendleads.domain.model
 
+import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent
 import jakarta.persistence.*
 import java.time.Instant
 import java.util.UUID
@@ -11,7 +12,15 @@ class Lead(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: UUID? = null,
     var realEstateAgencyId: UUID? = null,
-    var realEstateAgentId: UUID? = null,
+    /**
+     * mapsTo "lead.real_estate_agent_id". Associação real, e não coluna UUID crua,
+     * porque o escopo precisa percorrer `lead -> corretor -> filial -> responsavel`
+     * dentro de um subquery do Criteria — e a API Criteria só atravessa association.
+     * Sem isto, o escopo de lead por branch owner é inexprimível.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "real_estate_agent_id")
+    var realEstateAgent: RealEstateAgent? = null,
     var portalId: UUID? = null,
     var funnelStageId: UUID? = null,
     var originLeadId: String? = null,

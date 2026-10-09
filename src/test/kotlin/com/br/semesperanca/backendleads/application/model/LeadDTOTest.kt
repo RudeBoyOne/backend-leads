@@ -60,7 +60,9 @@ class LeadDTOTest {
 
         val lead = LeadDTO.toLead(dto)
 
-        assertThat(lead.realEstateAgentId).isEqualTo(agentId)
+        // `toLead` é um mapper estático, sem repositório: ele não resolve o id do
+        // corretor em entidade. Quem cria o lead resolve e passa a association.
+        assertThat(lead.realEstateAgent).isNull()
         assertThat(lead.portalId).isEqualTo(portalId)
         assertThat(lead.funnelStageId).isEqualTo(funnelStageId)
         assertThat(lead.source).isEqualTo("site")
@@ -109,7 +111,6 @@ class LeadDTOTest {
     fun `ida e volta preserva os campos de negocio do Lead`() {
         val original =
             TestFixtures.lead().apply {
-                realEstateAgentId = UUID.randomUUID()
                 source = "portal"
                 insightId = "INS-9"
             }
@@ -119,7 +120,7 @@ class LeadDTOTest {
         assertThat(volta.name).isEqualTo(original.name)
         assertThat(volta.email).isEqualTo(original.email)
         assertThat(volta.realEstateAgencyId).isEqualTo(original.realEstateAgencyId)
-        assertThat(volta.realEstateAgentId).isEqualTo(original.realEstateAgentId)
+        assertThat(volta.realEstateAgent).isNull()
         assertThat(volta.status).isEqualTo(original.status)
         assertThat(volta.source).isEqualTo(original.source)
         assertThat(volta.insightId).isNull()
