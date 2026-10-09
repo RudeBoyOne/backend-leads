@@ -29,18 +29,18 @@ import java.util.UUID
 @RequestMapping("/properties")
 @Tag(name = "Imóveis", description = "Gerenciamento de imóveis")
 class PropertyController(
-    private val service: PropertyService
+    private val service: PropertyService,
 ) {
     @PostMapping
     @Operation(summary = "Criar imóvel")
-    fun create(@RequestBody @Valid request: CreatePropertyRequest): ResponseEntity<PropertyResponse> {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request))
-    }
+    fun create(
+        @RequestBody @Valid request: CreatePropertyRequest,
+    ): ResponseEntity<PropertyResponse> = ResponseEntity.status(HttpStatus.CREATED).body(service.create(request))
 
     @GetMapping
     @Operation(
         summary = "Listar imóveis",
-        description = "Filtros: realEstateAgencyId, active, status, propertyType, search, minPrice, maxPrice"
+        description = "Filtros: realEstateAgencyId, active, status, propertyType, search, minPrice, maxPrice",
     )
     fun findAll(
         @RequestParam(required = false) realEstateAgencyId: UUID?,
@@ -51,38 +51,38 @@ class PropertyController(
         @RequestParam(required = false) minPrice: BigDecimal?,
         @RequestParam(required = false) maxPrice: BigDecimal?,
         @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "20") size: Int
+        @RequestParam(defaultValue = "20") size: Int,
     ): ResponseEntity<Page<PropertyResponse>> {
         val pageable: Pageable = PageRequest.of(page, size)
         return ResponseEntity.ok(
-            service.findAll(realEstateAgencyId, active, status, propertyType, search, minPrice, maxPrice, pageable)
+            service.findAll(realEstateAgencyId, active, status, propertyType, search, minPrice, maxPrice, pageable),
         )
     }
 
     @PatchMapping("/{id}/toggle-active")
     @Operation(summary = "Ativar/Desativar imóvel")
-    fun toggleActive(@PathVariable id: UUID): ResponseEntity<PropertyResponse> {
-        return ResponseEntity.ok(service.toggleActive(id))
-    }
+    fun toggleActive(
+        @PathVariable id: UUID,
+    ): ResponseEntity<PropertyResponse> = ResponseEntity.ok(service.toggleActive(id))
 
     @GetMapping("/{id}")
     @Operation(summary = "Buscar imóvel por ID")
-    fun findById(@PathVariable id: UUID): ResponseEntity<PropertyResponse> {
-        return ResponseEntity.ok(service.findById(id))
-    }
+    fun findById(
+        @PathVariable id: UUID,
+    ): ResponseEntity<PropertyResponse> = ResponseEntity.ok(service.findById(id))
 
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar imóvel")
     fun update(
         @PathVariable id: UUID,
-        @RequestBody @Valid request: UpdatePropertyRequest
-    ): ResponseEntity<PropertyResponse> {
-        return ResponseEntity.ok(service.update(id, request))
-    }
+        @RequestBody @Valid request: UpdatePropertyRequest,
+    ): ResponseEntity<PropertyResponse> = ResponseEntity.ok(service.update(id, request))
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Excluir imóvel")
-    fun delete(@PathVariable id: UUID): ResponseEntity<Void> {
+    fun delete(
+        @PathVariable id: UUID,
+    ): ResponseEntity<Void> {
         service.delete(id)
         return ResponseEntity.noContent().build()
     }

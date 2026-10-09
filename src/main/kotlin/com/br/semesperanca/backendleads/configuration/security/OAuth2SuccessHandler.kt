@@ -24,17 +24,15 @@ class OAuth2SuccessHandler(
     private val realEstateAgentRepository: RealEstateAgentRepository,
     private val roleRepository: RoleRepository,
     private val userRepository: UserRepository,
-
     @Value("\${app.frontend-url}")
-    private val frontendUrl: String
+    private val frontendUrl: String,
 ) : SimpleUrlAuthenticationSuccessHandler() {
-
     private val log = LoggerFactory.getLogger(javaClass)
 
     override fun onAuthenticationSuccess(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        authentication: Authentication
+        authentication: Authentication,
     ) {
         val oauthToken = authentication as OAuth2AuthenticationToken
 
@@ -42,30 +40,43 @@ class OAuth2SuccessHandler(
         val name: String? = oauthToken.principal.getAttribute<String>("name")
         val emailVerified: Boolean? = oauthToken.principal.getAttribute<Boolean>("email_verified")
 
-        val tokenValue: String = if (oauthToken.principal is OidcUser) {
-            (oauthToken.principal as OidcUser).idToken.tokenValue
-        } else {
-            val client = authorizedClientService.loadAuthorizedClient<OAuth2AuthorizedClient>(
-                oauthToken.authorizedClientRegistrationId,
-                oauthToken.name
-            )
-            client.accessToken.tokenValue
-        }
+        val tokenValue: String =
+            if (oauthToken.principal is OidcUser) {
+                (oauthToken.principal as OidcUser).idToken.tokenValue
+            } else {
+                val client =
+                    authorizedClientService.loadAuthorizedClient<OAuth2AuthorizedClient>(
+                        oauthToken.authorizedClientRegistrationId,
+                        oauthToken.name,
+                    )
+                // Spring Security 7 declara loadAuthorizedClient como @Nullable:
+                // ausencia de authorized client e um estado legitimo, nao um bug.
+                client?.accessToken?.tokenValue
+                    ?: throw IllegalStateException("Authorized client ausente para ${oauthToken.name}")
+            }
 
         if (email != null && emailVerified == true && !userRepository.existsByEmail(email)) {
-            val role: Role = roleRepository
-                .findByName("REAL_ESTATE_AGENT")
-                .orElseThrow { RuntimeException("Role nao encontrada") }
+            val role: Role =
+                roleRepository
+                    .findByName("REAL_ESTATE_AGENT")
+                    .orElseThrow { RuntimeException("Role nao encontrada") }
 
-            val agent = RealEstateAgent(
-                creci = "GOOGLE-" + UUID.randomUUID().toString().substring(0, 8).uppercase()
-            ).apply {
-                this.name = name
-                this.email = email
-                setPassword("")
-                this.role = role
-                isActive = true
-            }
+            val agent =
+                RealEstateAgent(
+                    creci =
+                        "GOOGLE-" +
+                            UUID
+                                .randomUUID()
+                                .toString()
+                                .substring(0, 8)
+                                .uppercase(),
+                ).apply {
+                    this.name = name
+                    this.email = email
+                    setPassword("")
+                    this.role = role
+                    isActive = true
+                }
 
             realEstateAgentRepository.save(agent)
             log.info("Novo usuario criado via Google: $email")

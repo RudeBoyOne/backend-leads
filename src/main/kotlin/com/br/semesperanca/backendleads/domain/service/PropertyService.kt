@@ -3,12 +3,16 @@ package com.br.semesperanca.backendleads.domain.service
 import com.br.semesperanca.backendleads.application.model.request.CreatePropertyRequest
 import com.br.semesperanca.backendleads.application.model.request.UpdatePropertyRequest
 import com.br.semesperanca.backendleads.application.model.response.PropertyResponse
+import com.br.semesperanca.backendleads.configuration.exception.NotFoundException
+import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.model.Property
+import com.br.semesperanca.backendleads.domain.repository.BranchOfficeRepository
 import com.br.semesperanca.backendleads.domain.repository.PropertyRepository
 import jakarta.persistence.criteria.Predicate
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -16,26 +20,34 @@ import java.util.UUID
 
 @Service
 class PropertyService(
-    private val repository: PropertyRepository
+    private val repository: PropertyRepository,
+    private val branchOfficeRepository: BranchOfficeRepository,
 ) {
+    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
     fun create(request: CreatePropertyRequest): PropertyResponse {
-        val property = Property(
-            realEstateAgencyId = request.realEstateAgencyId,
-            title = request.title,
-            description = request.description,
-            price = request.price,
-            propertyType = request.propertyType,
-            bedrooms = request.bedrooms,
-            bathrooms = request.bathrooms,
-            areaSqm = request.areaSqm,
-            address = request.address,
-            city = request.city,
-            state = request.state,
-            zipCode = request.zipCode,
-            status = request.status ?: "available",
-            active = true
-        )
+        val branchOffice = findBranchOfficeById(request.branchOfficeId)
+
+        val property =
+            Property(
+                // A agência é a da filial. Aceitar as duas no corpo permitiria um imóvel
+                // cujo `real_estate_agency_id` não é o da filial que o escopo percorre.
+                realEstateAgencyId = branchOffice.realEstateAgencyId,
+                branchOffice = branchOffice,
+                title = request.title,
+                description = request.description,
+                price = request.price,
+                propertyType = request.propertyType,
+                bedrooms = request.bedrooms,
+                bathrooms = request.bathrooms,
+                areaSqm = request.areaSqm,
+                address = request.address,
+                city = request.city,
+                state = request.state,
+                zipCode = request.zipCode,
+                status = request.status ?: "available",
+                active = true,
+            )
 
         return toResponse(repository.save(property))
     }
@@ -50,18 +62,20 @@ class PropertyService(
         search: String?,
         minPrice: BigDecimal?,
         maxPrice: BigDecimal?,
-        pageable: Pageable
-    ): Page<PropertyResponse> {
-        return repository
+        pageable: Pageable,
+    ): Page<PropertyResponse> =
+        repository
             .findAll(
                 buildSpec(realEstateAgencyId, active, status, propertyType, search, minPrice, maxPrice),
-                pageable
-            )
-            .map { toResponse(it) }
-    }
+                pageable,
+            ).map { toResponse(it) }
 
+    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
-    fun update(id: UUID, request: UpdatePropertyRequest): PropertyResponse {
+    fun update(
+        id: UUID,
+        request: UpdatePropertyRequest,
+    ): PropertyResponse {
         val property = findPropertyById(id)
         property.title = request.title
         property.description = request.description
@@ -79,6 +93,7 @@ class PropertyService(
         return toResponse(repository.save(property))
     }
 
+    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
     fun toggleActive(id: UUID): PropertyResponse {
         val property = findPropertyById(id)
@@ -86,14 +101,16 @@ class PropertyService(
         return toResponse(repository.save(property))
     }
 
+    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
     fun delete(id: UUID) {
         repository.delete(findPropertyById(id))
     }
 
-    private fun findPropertyById(id: UUID): Property {
-        return repository.findById(id).orElseThrow { RuntimeException("Imóvel não encontrado") }
-    }
+    private fun findBranchOfficeById(id: UUID): BranchOffice =
+        branchOfficeRepository.findById(id).orElseThrow { NotFoundException("Filial não encontrada") }
+
+    private fun findPropertyById(id: UUID): Property = repository.findById(id).orElseThrow { NotFoundException("Imóvel não encontrado") }
 
     private fun buildSpec(
         realEstateAgencyId: UUID?,
@@ -102,9 +119,9 @@ class PropertyService(
         propertyType: String?,
         search: String?,
         minPrice: BigDecimal?,
-        maxPrice: BigDecimal?
-    ): Specification<Property> {
-        return Specification { root, _, cb ->
+        maxPrice: BigDecimal?,
+    ): Specification<Property> =
+        Specification { root, _, cb ->
             val predicates = mutableListOf<Predicate>()
             if (realEstateAgencyId != null) {
                 predicates.add(cb.equal(root.get<Any>("realEstateAgencyId"), realEstateAgencyId))
@@ -130,16 +147,15 @@ class PropertyService(
                     cb.or(
                         cb.like(cb.lower(root.get<String>("title")), pattern),
                         cb.like(cb.lower(root.get<String>("address")), pattern),
-                        cb.like(cb.lower(root.get<String>("city")), pattern)
-                    )
+                        cb.like(cb.lower(root.get<String>("city")), pattern),
+                    ),
                 )
             }
             cb.and(*predicates.toTypedArray())
         }
-    }
 
-    private fun toResponse(property: Property): PropertyResponse {
-        return PropertyResponse(
+    private fun toResponse(property: Property): PropertyResponse =
+        PropertyResponse(
             id = property.id!!,
             realEstateAgencyId = property.realEstateAgencyId!!,
             title = property.title!!,
@@ -156,7 +172,6 @@ class PropertyService(
             status = property.status,
             active = property.active,
             createdAt = property.createdAt,
-            updatedAt = property.updatedAt
+            updatedAt = property.updatedAt,
         )
-    }
 }

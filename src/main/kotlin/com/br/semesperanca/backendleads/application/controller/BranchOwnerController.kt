@@ -28,25 +28,25 @@ import java.util.UUID
 @RequestMapping("/branch-owners")
 @Tag(name = "Responsáveis de filial", description = "Gerenciamento de responsáveis de filial")
 class BranchOwnerController(
-    private val service: BranchOwnerService
+    private val service: BranchOwnerService,
 ) {
     @PostMapping
     @Operation(summary = "Criar responsável de filial")
-    fun create(@RequestBody @Valid request: CreateBranchOwnerRequest): ResponseEntity<BranchOwnerResponse> {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request))
-    }
+    fun create(
+        @RequestBody @Valid request: CreateBranchOwnerRequest,
+    ): ResponseEntity<BranchOwnerResponse> = ResponseEntity.status(HttpStatus.CREATED).body(service.create(request))
 
     @GetMapping
     @Operation(
         summary = "Listar responsáveis de filial",
-        description = "Filtros: realEstateAgencyId, active e search (name/email)"
+        description = "Filtros: realEstateAgencyId, active e search (name/email)",
     )
     fun findAll(
         @RequestParam(required = false) realEstateAgencyId: UUID?,
         @RequestParam(required = false) active: Boolean?,
         @RequestParam(required = false) search: String?,
         @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "20") size: Int
+        @RequestParam(defaultValue = "20") size: Int,
     ): ResponseEntity<Page<BranchOwnerResponse>> {
         val pageable: Pageable = PageRequest.of(page, size)
         return ResponseEntity.ok(service.findAll(realEstateAgencyId, active, search, pageable))
@@ -54,28 +54,28 @@ class BranchOwnerController(
 
     @PatchMapping("/{id}/toggle-active")
     @Operation(summary = "Ativar/Desativar responsável de filial")
-    fun toggleActive(@PathVariable id: UUID): ResponseEntity<BranchOwnerResponse> {
-        return ResponseEntity.ok(service.toggleActive(id))
-    }
+    fun toggleActive(
+        @PathVariable id: UUID,
+    ): ResponseEntity<BranchOwnerResponse> = ResponseEntity.ok(service.toggleActive(id))
 
     @GetMapping("/{id}")
     @Operation(summary = "Buscar responsável de filial por ID")
-    fun findById(@PathVariable id: UUID): ResponseEntity<BranchOwnerResponse> {
-        return ResponseEntity.ok(service.findById(id))
-    }
+    fun findById(
+        @PathVariable id: UUID,
+    ): ResponseEntity<BranchOwnerResponse> = ResponseEntity.ok(service.findById(id))
 
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar responsável de filial")
     fun update(
         @PathVariable id: UUID,
-        @RequestBody @Valid request: UpdateBranchOwnerRequest
-    ): ResponseEntity<BranchOwnerResponse> {
-        return ResponseEntity.ok(service.update(id, request))
-    }
+        @RequestBody @Valid request: UpdateBranchOwnerRequest,
+    ): ResponseEntity<BranchOwnerResponse> = ResponseEntity.ok(service.update(id, request))
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Excluir responsável de filial")
-    fun delete(@PathVariable id: UUID): ResponseEntity<Void> {
+    fun delete(
+        @PathVariable id: UUID,
+    ): ResponseEntity<Void> {
         service.delete(id)
         return ResponseEntity.noContent().build()
     }
