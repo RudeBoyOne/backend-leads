@@ -9,10 +9,10 @@ imagem backend-leads-app). Nota abaixo sobre MAIL_* e GOOGLE_*.
 VARIAVEIS USADAS PELA APLICACAO (application.yml / docker-compose.yml)
 --------------------------------------------------------------------------------
 
-DB_URL                 host[:porta] do PostgreSQL         ex: localhost:5432
+DB_URL                 host[:porta] do PostgreSQL         ex: postgres:5432 (compose) / localhost:5432 (dev local)
 DB_NAME                nome do banco                       = meubanco
-USER_NAME              usuario do banco (mapeado de DB_USER)  = usuario
-PASSWORD               senha do banco (mapeado de DB_PASSWORD) = senha
+DB_USER                usuario do banco                    = usuario
+DB_PASSWORD            senha do banco                      = senha
 
 MAIL_USERNAME          SMTP (hostinger, porta 465)         = seu_email@gmail.com  (*)
 MAIL_PASSWORD          senha do SMTP                       = sua_senha_de_app     (*)
@@ -35,19 +35,22 @@ DB_NAME     = meubanco
 
 NOTA:
 - No docker-compose, o Postgres recebe POSTGRES_USER/POSTGRES_PASSWORD/POSTGRES_DB
-  e a aplicacao recebe USER_NAME/PASSWORD/DB_URL (mapeados a partir das vars .env).
+  e a aplicacao recebe DB_URL/DB_NAME/DB_USER/DB_PASSWORD (passados direto do .env).
 - Datasource montado em application.yml: jdbc:postgresql://${DB_URL}/${DB_NAME}
 - Fixos em application.yml (nao sao env vars):
     MAIL_HOST=smtp.hostinger.com   MAIL_PORT=465
     MAIL_FROM=no-reply@lucasfncode.com.br
     INSIGHT_URL=http://insights_app:8000
     JWT_EXPIRATION=86400000
+- Opcionais (default em application.yml, podem ser sobrescritos por env):
+    JWT_ISSUER=http://backend-leads.local     (iss claim dos tokens locais; usado no decoder/routing)
+    FRONTEND_URL=http://localhost:3000        (redirect apos login Google)
 
 --------------------------------------------------------------------------------
 EXEMPLO DE ARQUIVO .env (na raiz do projeto, gitignored)
 --------------------------------------------------------------------------------
 
-DB_URL=localhost:5432
+DB_URL=postgres:5432
 DB_USER=usuario
 DB_PASSWORD=senha
 DB_NAME=meubanco
@@ -56,14 +59,17 @@ MAIL_PASSWORD=sua_senha_de_app
 JWT_SECRET=Q2kz/249NiMd3umUd7p8t9wCaAgmg/y6fO1ZNoycDSvfUbRiNRU8S1BxUhWIGJvX
 GOOGLE_CLIENT_ID=197186840874-0kg5cqo250rq1j7l7givmps94dt0hidu.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=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
-OAUTH2_ISSUER_URI=https:http://localhost:8080/login/oauth2/code/google
+OAUTH2_ISSUER_URI=https://accounts.google.com
+# Opcionais:
+# JWT_ISSUER=http://backend-leads.local
+# FRONTEND_URL=http://localhost:3000
 
 --------------------------------------------------------------------------------
 RODAR A APLICACAO LOCALMENTE (sem Docker)
 --------------------------------------------------------------------------------
 
 set -a; . ../../.env; set +a
-export DB_URL=localhost:5432 USER_NAME="$DB_USER" PASSWORD="$DB_PASSWORD"
+export DB_URL=localhost:5432 DB_USER="$DB_USER" DB_PASSWORD="$DB_PASSWORD"
 
 OBS: o Postgres precisa estar acessivel em localhost:5432 (ver secao Docker abaixo).
 

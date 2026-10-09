@@ -5,8 +5,8 @@ spring:
     enabled: false
   datasource:
     url: jdbc:postgresql://${DB_URL}/${DB_NAME}
-    username: ${USER_NAME}
-    password: ${PASSWORD}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
   jpa:
     show-sql: false
     open-in-view: false
@@ -52,6 +52,7 @@ spring:
             user-name-attribute: sub
 
 app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
   mail:
     from: no-reply@lucasfncode.com.br
     notify-to: dev@lucasfncode.com.br
@@ -60,6 +61,18 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration: 86400000
+    issuer: ${JWT_ISSUER:http://backend-leads.local}
+  iot:
+    mqtt:
+      enabled: ${MQTT_ENABLED:true}
+      broker-host: ${MQTT_BROKER_HOST:localhost}
+      broker-port: ${MQTT_BROKER_PORT:9001}
+      server-path: ${MQTT_SERVER_PATH:/mqtt}
+      topic: ${MQTT_TOPIC:100esperanca/metrics/#}
+      client-id: ${MQTT_CLIENT_ID:backend-leads}
+      username: ${MQTT_USERNAME:}
+      password: ${MQTT_PASSWORD:}
+      qos: ${MQTT_QOS:1}
 
 management:
   endpoints:
