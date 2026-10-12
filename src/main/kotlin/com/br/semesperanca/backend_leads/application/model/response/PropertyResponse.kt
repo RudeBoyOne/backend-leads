@@ -1,4 +1,4 @@
-package com.br.semesperanca.backend_leads.application.model.properties.response
+package com.br.semesperanca.backend_leads.application.model.response
 
 import java.math.BigDecimal
 import java.time.LocalDateTime

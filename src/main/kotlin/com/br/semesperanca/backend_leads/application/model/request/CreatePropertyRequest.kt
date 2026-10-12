@@ -1,4 +1,4 @@
-package com.br.semesperanca.backend_leads.application.model.properties.request
+package com.br.semesperanca.backend_leads.application.model.request
 
 import jakarta.validation.constraints.DecimalMin
 import jakarta.validation.constraints.Max
