@@ -1,4 +1,4 @@
-package com.br.semesperanca.backend_leads.application.model.response
+package com.br.semesperanca.backendleads.application.model.response
 
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -6,7 +6,7 @@ import java.util.UUID
 
 data class PropertyResponse(
     val id: UUID,
-    val realEstaeAgencyId: UUID,
+    val realEstateAgencyId: UUID,
     val title: String,
     val description: String?,
     val price: BigDecimal?,
@@ -20,6 +20,6 @@ data class PropertyResponse(
     val zipCode: String?,
     val status: String?,
     val active: Boolean,
-    val ceatedAt: LocalDateTime,
+    val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime?,
 )

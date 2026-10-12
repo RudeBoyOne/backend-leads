@@ -1,4 +1,4 @@
-package com.br.semesperanca.backend_leads
+package com.br.semesperanca.backendleads
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class BackendLeadsApplication
 
 fun main(args: Array<String>) {
-	runApplication<BackendLeadsApplication>(*args)
+    runApplication<BackendLeadsApplication>(*args)
 }

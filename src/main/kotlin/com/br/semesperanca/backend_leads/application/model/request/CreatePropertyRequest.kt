@@ -1,4 +1,4 @@
-package com.br.semesperanca.backend_leads.application.model.request
+package com.br.semesperanca.backendleads.application.model.request
 
 import jakarta.validation.constraints.DecimalMin
 import jakarta.validation.constraints.Max
@@ -48,7 +48,7 @@ data class CreatePropertyRequest(
     @field:NotNull(message = "branchOfficeId é obrigatório")
     val branchOfficeId: UUID,
     @field:Pattern(
-        regexp = "available | reserved | sold | rented | inactive",
+        regexp = "available|reserved|sold|rented|inactive",
         message = "status deve ser um dos seguintes valores: available, reserved, sold, rented, inactive",
     )
     val status: String? = "available",
