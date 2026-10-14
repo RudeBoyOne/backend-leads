@@ -289,3 +289,4 @@ Coisas que quebram de formas não óbvias e que valem saber antes de escrever o 
 - Swagger UI: <http://localhost:8080/swagger-ui.html>
 - OpenAPI JSON: <http://localhost:8080/v3/api-docs>
 - Actuator: `/actuator/health`, `/actuator/info`, `/actuator/metrics`
+- Link do repositório: <https://github.com/RudeBoyOne/backend-leads>

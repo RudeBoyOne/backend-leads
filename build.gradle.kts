@@ -148,7 +148,6 @@ tasks.jacocoTestReport {
     }
 }
 
-// Meta enforcada: 90% de linha cobertas. Build falha abaixo disso.
 tasks.jacocoTestCoverageVerification {
     violationRules {
         rule {

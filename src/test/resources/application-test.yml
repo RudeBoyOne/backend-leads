@@ -5,7 +5,7 @@
 # Environment, entao declarar a chave AQUI mesmo resolve o placeholder do
 # documento principal — nao ha variavel de ambiente a exportar.
 DB_URL: localhost:5432
-DB_NAME: backend_leads_test
+DB_NAME: backendleads_test
 DB_USER: test
 DB_PASSWORD: test
 MAIL_USERNAME: test@example.com
