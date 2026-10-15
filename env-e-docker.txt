@@ -1,0 +1,136 @@
+================================================================================
+ VARIÁVEIS DE AMBIENTE — backend-leads
+================================================================================
+
+Valores recuperados dos containers: postgres (em execucao) e app (backend-leads,
+imagem backend-leads-app). Nota abaixo sobre MAIL_* e GOOGLE_*.
+
+--------------------------------------------------------------------------------
+VARIAVEIS USADAS PELA APLICACAO (application.yml / docker-compose.yml)
+--------------------------------------------------------------------------------
+
+DB_URL                 host[:porta] do PostgreSQL         ex: postgres:5432 (compose) / localhost:5432 (dev local)
+DB_NAME                nome do banco                       = meubanco
+DB_USER                usuario do banco                    = usuario
+DB_PASSWORD            senha do banco                      = senha
+
+MAIL_USERNAME          SMTP (hostinger, porta 465)         = seu_email@gmail.com  (*)
+MAIL_PASSWORD          senha do SMTP                       = sua_senha_de_app     (*)
+JWT_SECRET             chave HMAC-SHA256 p/ assinar JWT    = Q2kz/249NiMd3umUd7p8t9wCaAgmg/y6fO1ZNoycDSvfUbRiNRU8S1BxUhWIGJvX
+GOOGLE_CLIENT_ID       OAuth2 Google                       = coloque_seu_client_id_aqui.apps.googleusercontent.com  (*)
+GOOGLE_CLIENT_SECRET   OAuth2 Google                       = coloque_seu_client_secret_aqui                         (*)
+OAUTH2_ISSUER_URI      ex: https://accounts.google.com     = https://accounts.google.com
+
+(*) VALOR EH PLACEHOLDER NO CONTAINER (nunca foram credenciais reais).
+    MAIL_USERNAME/MAIL_PASSWORD nao sao compatíveis com hostinger/porta 465.
+    GOOGLE_CLIENT_ID/SECRET sao textos de exemplo.
+
+--------------------------------------------------------------------------------
+VALORES REAIS ENCONTRADOS
+--------------------------------------------------------------------------------
+
+DB_USER     = usuario
+DB_PASSWORD = senha
+DB_NAME     = meubanco
+
+NOTA:
+- No docker-compose, o Postgres recebe POSTGRES_USER/POSTGRES_PASSWORD/POSTGRES_DB
+  e a aplicacao recebe DB_URL/DB_NAME/DB_USER/DB_PASSWORD (passados direto do .env).
+- Datasource montado em application.yml: jdbc:postgresql://${DB_URL}/${DB_NAME}
+- Fixos em application.yml (nao sao env vars):
+    MAIL_HOST=smtp.hostinger.com   MAIL_PORT=465
+    MAIL_FROM=no-reply@lucasfncode.com.br
+    INSIGHT_URL=http://insights_app:8000
+    JWT_EXPIRATION=86400000
+- Opcionais (default em application.yml, podem ser sobrescritos por env):
+    JWT_ISSUER=http://backend-leads.local     (iss claim dos tokens locais; usado no decoder/routing)
+    FRONTEND_URL=http://localhost:3000        (redirect apos login Google)
+
+--------------------------------------------------------------------------------
+EXEMPLO DE ARQUIVO .env (na raiz do projeto, gitignored)
+--------------------------------------------------------------------------------
+
+DB_URL=postgres:5432
+DB_USER=usuario
+DB_PASSWORD=senha
+DB_NAME=meubanco
+MAIL_USERNAME=seu_email@gmail.com
+MAIL_PASSWORD=sua_senha_de_app
+JWT_SECRET=Q2kz/249NiMd3umUd7p8t9wCaAgmg/y6fO1ZNoycDSvfUbRiNRU8S1BxUhWIGJvX
+GOOGLE_CLIENT_ID=197186840874-0kg5cqo250rq1j7l7givmps94dt0hidu.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
+OAUTH2_ISSUER_URI=https://accounts.google.com
+# Opcionais:
+# JWT_ISSUER=http://backend-leads.local
+# FRONTEND_URL=http://localhost:3000
+
+--------------------------------------------------------------------------------
+RODAR A APLICACAO LOCALMENTE (sem Docker)
+--------------------------------------------------------------------------------
+
+set -a; . ../../.env; set +a
+export DB_URL=localhost:5432 DB_USER="$DB_USER" DB_PASSWORD="$DB_PASSWORD"
+
+OBS: o Postgres precisa estar acessivel em localhost:5432 (ver secao Docker abaixo).
+
+--------------------------------------------------------------------------------
+RODAR VIA DOCKER COMPOSE
+--------------------------------------------------------------------------------
+
+Usa o .env da raiz do projeto automaticamente:
+  docker network create lead-network   # uma vez, se nao existir
+  docker compose up -d
+
+--------------------------------------------------------------------------------
+================================================================================
+ DOCKER NETWORK — estado atual (08/09/2026)
+================================================================================
+
+--------------------------------------------------------------------------------
+REDES EXISTENTES
+--------------------------------------------------------------------------------
+
+Nome                            Driver   Tipo            Uso
+backend-leads_backend-internal  bridge   local (compose) app + postgres
+lead-network                    bridge   local/EXTERNAL  app (integracao insights)
+bridge / host / none            -        default do Docker
+
+--------------------------------------------------------------------------------
+CONTAINER POSTGRES
+--------------------------------------------------------------------------------
+
+Nome        : postgres-backend-leads
+Imagem      : postgres:16.10
+Rede        : backend-leads_backend-internal
+Aliases     : postgres-backend-leads , postgres
+Porta host  : NENHUMA publicada (docker port -> vazio). So acessivel pela rede interna
+Projeto     : backend-leads (compose em /home/yllopesdev/.vscode/Java/backend-leads)
+
+CREDENCIAIS EM USO NO CONTAINER:
+  POSTGRES_USER=usuario  POSTGRES_PASSWORD=senha  POSTGRES_DB=meubanco
+
+--------------------------------------------------------------------------------
+ACESSAR O POSTGRES
+--------------------------------------------------------------------------------
+
+1) Dentro da rede do compose (nome de rede: postgres ou postgres-backend-leads):
+     docker exec -it postgres-backend-leads psql -U usuario -d meubanco
+
+2) Do host na porta 5432 (para spring-boot:run local): nao esta publicado.
+   Para publicar, rode com um override:
+     docker run -d --rm --name backend-leads-db \
+       -e POSTGRES_USER=usuario -e POSTGRES_PASSWORD=senha -e POSTGRES_DB=meubanco \
+       -p 127.0.0.1:5432:5432 -v pgdata:/var/lib/postgresql/data \
+       postgres:16.10
+   OU crie /tmp/opencode/compose-override.yml com services.postgres.ports e rode:
+     docker compose -f docker-compose.yml -f /tmp/opencode/compose-override.yml up -d postgres
+
+--------------------------------------------------------------------------------
+INTEGRACAO COM A REDE EXTERNA (lead-network / insights_app)
+--------------------------------------------------------------------------------
+
+O servico app do compose participa de backend-leads_backend-internal E lead-network.
+O app fala com o insights via http://insights_app:8000, que deve estar na rede
+lead-network. Se a rede nao existir:
+     docker network create lead-network
+(lead-network ja existe neste ambiente.)
