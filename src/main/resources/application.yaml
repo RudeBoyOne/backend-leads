@@ -1,0 +1,95 @@
+spring:
+  application:
+    name: backend-leads
+  jmx:
+    enabled: false
+  datasource:
+    url: jdbc:postgresql://${DB_URL}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    show-sql: false
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  mail:
+    host: smtp.hostinger.com
+    port: 465
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          starttls:
+            enable: false
+          transport:
+            protocol: smtp
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH2_ISSUER_URI}
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+              - openid
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+            user-name-attribute: sub
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  mail:
+    from: no-reply@lucasfncode.com.br
+    notify-to: dev@lucasfncode.com.br
+  insight:
+    url: http://insights_app:8000
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 86400000
+    issuer: ${JWT_ISSUER:http://backend-leads.local}
+  iot:
+    mqtt:
+      enabled: ${MQTT_ENABLED:true}
+      broker-host: ${MQTT_BROKER_HOST:localhost}
+      broker-port: ${MQTT_BROKER_PORT:9001}
+      server-path: ${MQTT_SERVER_PATH:/mqtt}
+      topic: ${MQTT_TOPIC:100esperanca/metrics/#}
+      client-id: ${MQTT_CLIENT_ID:backend-leads}
+      username: ${MQTT_USERNAME:}
+      password: ${MQTT_PASSWORD:}
+      qos: ${MQTT_QOS:1}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  health:
+    mail:
+      enabled: false
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs
