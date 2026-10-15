@@ -1,9 +1,9 @@
-package com.br.semesperanca.backendleads.application.controller
+package com.br.semesperanca.backend_leads.application.controller
 
-import com.br.semesperanca.backendleads.application.model.request.CreateTeamRequest
-import com.br.semesperanca.backendleads.application.model.request.UpdateTeamRequest
-import com.br.semesperanca.backendleads.application.model.response.TeamResponse
-import com.br.semesperanca.backendleads.domain.service.TeamService
+import com.br.semesperanca.backend_leads.application.model.request.CreateTeamRequest
+import com.br.semesperanca.backend_leads.application.model.request.UpdateTeamRequest
+import com.br.semesperanca.backend_leads.application.model.response.TeamResponse
+import com.br.semesperanca.backend_leads.domain.service.TeamService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -27,27 +27,38 @@ class TeamController(
     private val service: TeamService,
 ) {
     @GetMapping
-    @Operation(summary = "Listar times")
-    fun findAll(): ResponseEntity<List<TeamResponse>> = ResponseEntity.ok(service.findAll())
+    @Operation(summary = "Listar todos os times")
+    fun findAll(): ResponseEntity<List<TeamResponse>> =
+        ResponseEntity.ok(service.findAll())
+
+    @GetMapping("/search")
+    @Operation(summary = "Buscar times por nome (parcial)")
+    fun findByName(
+        @RequestParam name: String,
+    ): ResponseEntity<List<TeamResponse>> =
+        ResponseEntity.ok(service.findByName(name))
 
     @PostMapping
     @Operation(summary = "Criar time")
     fun create(
         @RequestBody @Valid request: CreateTeamRequest,
-    ): ResponseEntity<TeamResponse> = ResponseEntity.status(HttpStatus.CREATED).body(service.create(request))
+    ): ResponseEntity<TeamResponse> =
+        ResponseEntity.status(HttpStatus.CREATED).body(service.create(request))
 
     @GetMapping("/{id}")
     @Operation(summary = "Buscar time por ID")
     fun findById(
         @PathVariable id: UUID,
-    ): ResponseEntity<TeamResponse> = ResponseEntity.ok(service.findById(id))
+    ): ResponseEntity<TeamResponse> =
+        ResponseEntity.ok(service.findById(id))
 
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar time")
     fun update(
         @PathVariable id: UUID,
         @RequestBody @Valid request: UpdateTeamRequest,
-    ): ResponseEntity<TeamResponse> = ResponseEntity.ok(service.update(id, request))
+    ): ResponseEntity<TeamResponse> =
+        ResponseEntity.ok(service.update(id, request))
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Excluir time")
@@ -62,7 +73,8 @@ class TeamController(
     @Operation(summary = "Listar times por filial")
     fun findByBranchOfficeId(
         @PathVariable branchOfficeId: UUID,
-    ): ResponseEntity<List<TeamResponse>> = ResponseEntity.ok(service.findByBranchOfficeId(branchOfficeId))
+    ): ResponseEntity<List<TeamResponse>> =
+        ResponseEntity.ok(service.findByBranchOfficeId(branchOfficeId))
 
     @PostMapping("/{teamId}/agents/{agentId}")
     @Operation(summary = "Adicionar corretor ao time")
@@ -88,5 +100,6 @@ class TeamController(
     @Operation(summary = "Listar corretores do time")
     fun findAgentsByTeamId(
         @PathVariable teamId: UUID,
-    ): ResponseEntity<List<UUID>> = ResponseEntity.ok(service.findAgentsByTeamId(teamId))
+    ): ResponseEntity<List<UUID>> =
+        ResponseEntity.ok(service.findAgentsByTeamId(teamId))
 }
