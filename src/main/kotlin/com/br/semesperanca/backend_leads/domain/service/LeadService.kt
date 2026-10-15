@@ -114,13 +114,14 @@ class LeadService(
         id: UUID,
         request: UpdateLeadRequest,
     ): LeadDTO {
-        // O `findById` é escopado, então um corretor só chega ao lead dele — o
-        // `@PreAuthorize` acima diz quem pode escrever, e a query diz sobre o quê.
         val lead = leadRepository.findById(id).orElseThrow { NotFoundException("Lead não encontrado") }
 
         request.name?.let { lead.name = it }
+        
         request.email?.let { lead.email = it }
-        request.phoneNumber?.let { lead.phoneNumber = it }
+        
+        request.phoneNumber?.let { lead.phoneNumber = it.toLongOrNull() ?: lead.phoneNumber }
+        
         request.message?.let { lead.message = it }
         request.temperature?.let { lead.temperature = it }
         request.transactionType?.let { lead.transactionType = it }

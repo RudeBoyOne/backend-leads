@@ -65,6 +65,13 @@ class PropertyController(
         @PathVariable id: UUID,
     ): ResponseEntity<PropertyResponse> = ResponseEntity.ok(service.toggleActive(id))
 
+    @GetMapping("/search")
+    @Operation(summary = "Buscar imóveis por título")
+    fun searchByTitle(
+        @RequestParam title: String,
+    ): ResponseEntity<List<PropertyResponse>> =
+        ResponseEntity.ok(service.searchByTitle(title))
+    
     @GetMapping("/{id}")
     @Operation(summary = "Buscar imóvel por ID")
     fun findById(
