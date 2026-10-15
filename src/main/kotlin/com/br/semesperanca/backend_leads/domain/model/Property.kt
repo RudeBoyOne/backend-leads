@@ -20,16 +20,16 @@ class Property(
     @JoinColumn(name = "branch_office_id", nullable = false)
     var branchOffice: BranchOffice? = null,
 
-    @Column(name = "title", nullable = false)
+    @Column(name = "title", nullable = false, length = 100)
     var title: String? = null,
 
-    @Column(name = "description")
+    @Column(name = "description", length = 200)
     var description: String? = null,
 
     @Column(name = "price", precision = 12, scale = 2)
     var price: BigDecimal? = null,
 
-    @Column(name = "property_type")
+    @Column(name = "property_type", length = 50)
     var propertyType: String? = null,
 
     @Column(name = "bedrooms")
@@ -41,19 +41,19 @@ class Property(
     @Column(name = "area_sqm", precision = 10, scale = 2)
     var areaSqm: BigDecimal? = null,
 
-    @Column(name = "address")
+    @Column(name = "address", length = 200)
     var address: String? = null,
 
-    @Column(name = "city")
+    @Column(name = "city", length = 100)
     var city: String? = null,
 
-    @Column(name = "state")
+    @Column(name = "state", length = 50)
     var state: String? = null,
 
-    @Column(name = "zip_code")
+    @Column(name = "zip_code", length = 9)
     var zipCode: String? = null,
 
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = false, length = 20)
     var status: String? = "available",
 
     @Column(name = "active", nullable = false)
