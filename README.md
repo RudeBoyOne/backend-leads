@@ -24,11 +24,11 @@ Nossa aplicação tem como objetivo servir para empresas do ramo imobiliário, u
 
 | Integrante | Entidade 1 | Entidade 2 |
 | --- | --- | --- |
-| [Allan Chagas] | [PropertySensor] | [SensorMetric] |
-| [Gabriel Alves] | [Property] | [Lead] |
-| [Lucas Ferreira] | [RealStateAgency] | [BranchOffice] |
-| [Rafael Mateus] | [Team] | [Activity] |
-| [Ygor Lopes] | [Role] | [User] |
+| Allan Chagas | PropertySensor | SensorMetric |
+| Gabriel Alves | Property | Lead |
+| Lucas Ferreira | RealStateAgency | BranchOffice |
+| Rafael Mateus | Team | Activity |
+| Ygor Lopes | Role | User |
 
 ---
 
@@ -58,8 +58,8 @@ Quem já tiver um PostgreSQL acessível em `localhost:5432` pode rodar sem o Doc
 
 O código vive em `src/main/kotlin`, sob o pacote `com.br.semesperanca.backendleads`, em quatro
 camadas:
-`
+```
 application/   controllers REST e DTOs (data classes)
 domain/        entidades JPA, repositories e services
 configuration/ segurança, tratamento de exceções, e-mail, Swagger, async
-`
+```
