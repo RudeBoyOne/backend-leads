@@ -1,0 +1,15 @@
+package com.br.semesperanca.backend_leads.application.model.response
+
+import java.time.LocalDateTime
+import java.util.UUID
+
+data class ActivityResponse(
+    val id: UUID,
+    val leadId: UUID,
+    val propertyId: UUID?,
+    val title: String,
+    val description: String,
+    val activityDate: LocalDateTime,
+    val completed: Boolean,
+    val createdAt: LocalDateTime?,
+)
