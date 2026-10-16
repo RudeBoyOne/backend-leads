@@ -1,4 +1,4 @@
-package com.br.semesperanca.backend_leads.domain.model
+package com.br.semesperanca.backendleads.domain.model
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity

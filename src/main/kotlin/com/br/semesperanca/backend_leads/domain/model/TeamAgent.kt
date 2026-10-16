@@ -1,6 +1,6 @@
-package com.br.semesperanca.backend_leads.domain.model
+package com.br.semesperanca.backendleads.domain.model
 
-import com.br.semesperanca.backend_leads.domain.model.user.RealEstateAgent
+import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
