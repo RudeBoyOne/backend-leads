@@ -1,4 +1,4 @@
-ckage com.br.semesperanca.backendleads.domain.model
+package com.br.semesperanca.backendleads.domain.model
 
 import jakarta.persistence.*
 import java.time.Instant

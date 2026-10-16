@@ -20,6 +20,6 @@ data class PropertyResponse(
     val zipCode: String?,
     val status: String?,
     val active: Boolean,
-    val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime?,
+    val createdAt: LocalDateTime?,
+    val updatedAt: LocalDateTime?
 )

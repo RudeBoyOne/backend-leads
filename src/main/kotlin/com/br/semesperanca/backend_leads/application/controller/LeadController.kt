@@ -35,7 +35,7 @@ class LeadController(
     @PostMapping("/receive")
     @Operation(
         summary = "Webhook",
-        description = "Endpoint que recebe os leads dos postais",
+        description = "Endpoint que recebe os leads dos portais",
     )
     fun receive(
         @Valid @RequestBody receivedNotificationDTO: LeadReceivedNotificationDTO,
@@ -60,12 +60,15 @@ class LeadController(
         @RequestParam(required = false) origin: String?,
         @RequestParam(required = false) search: String?,
         pageable: Pageable,
-    ): ResponseEntity<Page<Lead>> {
+    ): ResponseEntity<Page<LeadDTO>> {
         val leads: Page<Lead> = leadService.findLeads(status, corretorId, origin, search, pageable)
 
         logger.info("Fetched Leads | Count: {}", leads.totalElements)
 
-        return ResponseEntity.ok(leads)
+        val dtos = leads.map {
+            LeadDTO.fromLead(it)
+        }
+        return ResponseEntity.ok(dtos)
     }
 
     @GetMapping("/search/{id}")

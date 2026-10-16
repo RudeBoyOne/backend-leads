@@ -54,6 +54,9 @@ class PropertyService(
 
     fun findById(id: UUID): PropertyResponse = toResponse(findPropertyById(id))
 
+    fun searchByTitle(title: String): List<PropertyResponse> =
+        repository.searchByTitle(title).map { toResponse(it) }
+    
     fun findAll(
         realEstateAgencyId: UUID?,
         active: Boolean?,
@@ -175,4 +178,5 @@ class PropertyService(
             createdAt = property.createdAt,
             updatedAt = property.updatedAt,
         )
+
 }
