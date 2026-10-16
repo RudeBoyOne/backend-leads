@@ -31,34 +31,6 @@ interface ScopedRepository<T : Any, ID : Any> :
     JpaRepository<T, ID>,
     JpaSpecificationExecutor<T>
 
-/**
- * Base genérica de todo repositório escopado, registrada em
- * [com.br.semesperanca.backendleads.configuration.security.RepositorySecurityConfig]
- * via `baseClass`.
- *
- * O filtro do cliente se **soma** ao de escopo em toda sobrecarga que recebe
- * `Specification`: um service pode passar o próprio filtro, nunca remover a
- * subárvore da role. É a diferença entre um filtro e uma brecha — `and` é
- * obrigatório, e a soma é o que faz a paginação continuar correta, porque a
- * mesma `Specification` alimenta o `COUNT`.
- *
- * O construtor tem exatamente `(JpaEntityInformation, EntityManager)` porque
- * esse é o único que o Spring Data resolve por reflexão. Por isso o escopo não
- * pode depender de nenhum bean: [DataScope] lê o `SecurityContextHolder`.
- *
- * ### Limite conhecido e deliberado
- * Só os métodos herdados de `SimpleJpaRepository` são reescritos. Métodos
- * derivados declarados na interface (`findByManagerId`, `existsByCreci`,
- * `findByOriginLeadId`) são montados pelo interceptor de query do Spring Data e
- * **não** passam por aqui — eles não carregam escopo. Por isso os services que
- * os usam de ponta exposta validam antes o id do recurso via `findById`, que é
- * escopado. A lista desses métodos é curta e está auditada; introduzir um
- * método derivado novo em entidade escopada exige passar por `findAll(spec)`.
- *
- * A classe é concreta e `open`, não `abstract`: `repositoryBaseClass` instancia a
- * base por reflexão, e uma classe abstrata faria o primeiro repositório falhar
- * com `Is it an abstract class?`.
- */
 open class ScopedRepositoryImpl<T : Any, ID : Any>(
     entityInformation: JpaEntityInformation<T, ID>,
     entityManager: EntityManager,
