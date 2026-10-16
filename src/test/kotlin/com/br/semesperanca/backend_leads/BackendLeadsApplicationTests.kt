@@ -1,4 +1,4 @@
-package com.br.semesperanca.backend_leads
+package com.br.semesperanca.backendleads
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest

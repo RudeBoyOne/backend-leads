@@ -1,14 +1,14 @@
-package com.br.semesperanca.backend_leads.domain.service
+package com.br.semesperanca.backendleads.domain.service
 
-import com.br.semesperanca.backend_leads.application.mapper.ActivityMapper
-import com.br.semesperanca.backend_leads.application.model.request.CreateActivityRequest
-import com.br.semesperanca.backend_leads.application.model.request.UpdateActivityRequest
-import com.br.semesperanca.backend_leads.application.model.response.ActivityResponse
-import com.br.semesperanca.backend_leads.domain.model.Activity
-import com.br.semesperanca.backend_leads.domain.model.Lead
-import com.br.semesperanca.backend_leads.domain.model.Property
-import com.br.semesperanca.backend_leads.domain.repository.ActivityRepository
-import com.br.semesperanca.backend_leads.domain.repository.PropertyRepository
+import com.br.semesperanca.backendleads.application.mapper.ActivityMapper
+import com.br.semesperanca.backendleads.application.model.request.CreateActivityRequest
+import com.br.semesperanca.backendleads.application.model.request.UpdateActivityRequest
+import com.br.semesperanca.backendleads.application.model.response.ActivityResponse
+import com.br.semesperanca.backendleads.domain.model.Activity
+import com.br.semesperanca.backendleads.domain.model.Lead
+import com.br.semesperanca.backendleads.domain.model.Property
+import com.br.semesperanca.backendleads.domain.repository.ActivityRepository
+import com.br.semesperanca.backendleads.domain.repository.PropertyRepository
 import jakarta.persistence.criteria.Predicate
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable

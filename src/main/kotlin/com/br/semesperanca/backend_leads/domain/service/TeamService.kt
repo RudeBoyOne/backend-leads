@@ -1,14 +1,14 @@
-package com.br.semesperanca.backend_leads.domain.service
+package com.br.semesperanca.backendleads.domain.service
 
-import com.br.semesperanca.backend_leads.application.mapper.TeamMapper
-import com.br.semesperanca.backend_leads.application.model.request.CreateTeamRequest
-import com.br.semesperanca.backend_leads.application.model.request.UpdateTeamRequest
-import com.br.semesperanca.backend_leads.application.model.response.TeamResponse
-import com.br.semesperanca.backend_leads.domain.model.Team
-import com.br.semesperanca.backend_leads.domain.model.TeamAgent
-import com.br.semesperanca.backend_leads.domain.model.user.Manager
-import com.br.semesperanca.backend_leads.domain.repository.TeamAgentRepository
-import com.br.semesperanca.backend_leads.domain.repository.TeamRepository
+import com.br.semesperanca.backendleads.application.mapper.TeamMapper
+import com.br.semesperanca.backendleads.application.model.request.CreateTeamRequest
+import com.br.semesperanca.backendleads.application.model.request.UpdateTeamRequest
+import com.br.semesperanca.backendleads.application.model.response.TeamResponse
+import com.br.semesperanca.backendleads.domain.model.Team
+import com.br.semesperanca.backendleads.domain.model.TeamAgent
+import com.br.semesperanca.backendleads.domain.model.user.Manager
+import com.br.semesperanca.backendleads.domain.repository.TeamAgentRepository
+import com.br.semesperanca.backendleads.domain.repository.TeamRepository
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

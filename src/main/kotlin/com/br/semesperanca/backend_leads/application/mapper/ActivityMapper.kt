@@ -1,10 +1,10 @@
-package com.br.semesperanca.backend_leads.application.mapper
+package com.br.semesperanca.backendleads.application.mapper
 
-import com.br.semesperanca.backend_leads.application.model.request.CreateActivityRequest
-import com.br.semesperanca.backend_leads.application.model.response.ActivityResponse
-import com.br.semesperanca.backend_leads.domain.model.Activity
-import com.br.semesperanca.backend_leads.domain.model.Lead
-import com.br.semesperanca.backend_leads.domain.model.Property
+import com.br.semesperanca.backendleads.application.model.request.CreateActivityRequest
+import com.br.semesperanca.backendleads.application.model.response.ActivityResponse
+import com.br.semesperanca.backendleads.domain.model.Activity
+import com.br.semesperanca.backendleads.domain.model.Lead
+import com.br.semesperanca.backendleads.domain.model.Property
 import org.springframework.stereotype.Component
 
 @Component

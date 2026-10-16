@@ -1,6 +1,6 @@
-package com.br.semesperanca.backend_leads.domain.repository
+package com.br.semesperanca.backendleads.domain.repository
 
-import com.br.semesperanca.backend_leads.domain.model.Activity
+import com.br.semesperanca.backendleads.domain.model.Activity
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query

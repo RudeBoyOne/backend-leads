@@ -1,4 +1,4 @@
-package com.br.semesperanca.backend_leads.application.model.request
+package com.br.semesperanca.backendleads.application.model.request
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Positive

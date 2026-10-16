@@ -1,4 +1,4 @@
-package com.br.semesperanca.backend_leads.application.model.response
+package com.br.semesperanca.backendleads.application.model.response
 
 import java.time.LocalDateTime
 import java.util.UUID

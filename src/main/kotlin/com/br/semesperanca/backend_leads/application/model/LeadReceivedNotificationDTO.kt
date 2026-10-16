@@ -1,4 +1,4 @@
-package com.br.semesperanca.backend_leads.application.model
+package com.br.semesperanca.backendleads.application.model
 
 data class LeadReceivedNotificationDTO(
     val leadId: String,

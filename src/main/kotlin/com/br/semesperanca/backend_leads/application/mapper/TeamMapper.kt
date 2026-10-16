@@ -1,9 +1,9 @@
-package com.br.semesperanca.backend_leads.application.mapper
+package com.br.semesperanca.backendleads.application.mapper
 
-import com.br.semesperanca.backend_leads.application.model.request.CreateTeamRequest
-import com.br.semesperanca.backend_leads.application.model.response.TeamResponse
-import com.br.semesperanca.backend_leads.domain.model.Team
-import com.br.semesperanca.backend_leads.domain.model.user.Manager
+import com.br.semesperanca.backendleads.application.model.request.CreateTeamRequest
+import com.br.semesperanca.backendleads.application.model.response.TeamResponse
+import com.br.semesperanca.backendleads.domain.model.Team
+import com.br.semesperanca.backendleads.domain.model.user.Manager
 import org.springframework.stereotype.Component
 
 @Component

@@ -1,9 +1,9 @@
-package com.br.semesperanca.backend_leads.application.controller
+package com.br.semesperanca.backendleads.application.controller
 
-import com.br.semesperanca.backend_leads.application.model.request.CreateTeamRequest
-import com.br.semesperanca.backend_leads.application.model.request.UpdateTeamRequest
-import com.br.semesperanca.backend_leads.application.model.response.TeamResponse
-import com.br.semesperanca.backend_leads.domain.service.TeamService
+import com.br.semesperanca.backendleads.application.model.request.CreateTeamRequest
+import com.br.semesperanca.backendleads.application.model.request.UpdateTeamRequest
+import com.br.semesperanca.backendleads.application.model.response.TeamResponse
+import com.br.semesperanca.backendleads.domain.service.TeamService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid

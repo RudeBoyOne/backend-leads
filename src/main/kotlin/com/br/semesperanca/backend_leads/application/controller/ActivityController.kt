@@ -1,9 +1,9 @@
-package com.br.semesperanca.backend_leads.application.controller
+package com.br.semesperanca.backendleads.application.controller
 
-import com.br.semesperanca.backend_leads.application.model.request.CreateActivityRequest
-import com.br.semesperanca.backend_leads.application.model.request.UpdateActivityRequest
-import com.br.semesperanca.backend_leads.application.model.response.ActivityResponse
-import com.br.semesperanca.backend_leads.domain.service.ActivityService
+import com.br.semesperanca.backendleads.application.model.request.CreateActivityRequest
+import com.br.semesperanca.backendleads.application.model.request.UpdateActivityRequest
+import com.br.semesperanca.backendleads.application.model.response.ActivityResponse
+import com.br.semesperanca.backendleads.domain.service.ActivityService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
