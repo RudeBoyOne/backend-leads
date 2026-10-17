@@ -61,7 +61,7 @@ class ManagerService(
                 // `real_estate_agency_id NOT NULL`, e um gerente com filial de uma
                 // agência e agência de outra não pertence a nenhuma subárvore
                 // coerente.
-                realEstateAgencyId = branchOffice.realEstateAgencyId
+                realEstateAgencyId = branchOffice.realEstateAgency?.id
             }
 
         return toResponse(repository.save(manager))
@@ -106,7 +106,7 @@ class ManagerService(
         manager.name = request.name
         manager.email = request.email
         manager.branchOffice = branchOffice
-        manager.realEstateAgencyId = branchOffice.realEstateAgencyId
+        manager.realEstateAgencyId = branchOffice.realEstateAgency?.id
         return toResponse(repository.save(manager))
     }
 

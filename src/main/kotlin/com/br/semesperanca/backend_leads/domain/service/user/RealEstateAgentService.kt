@@ -55,7 +55,7 @@ class RealEstateAgentService(
                 this.role = role
                 isActive = true
                 this.branchOffice = branchOffice
-                realEstateAgencyId = branchOffice.realEstateAgencyId
+                realEstateAgencyId = branchOffice.realEstateAgency?.id
             }
 
         return toResponse(repository.save(agent))
@@ -75,7 +75,7 @@ class RealEstateAgentService(
         agent.email = request.email
         agent.creci = request.creci
         agent.branchOffice = branchOffice
-        agent.realEstateAgencyId = branchOffice.realEstateAgencyId
+        agent.realEstateAgencyId = branchOffice.realEstateAgency?.id
         return toResponse(repository.save(agent))
     }
 

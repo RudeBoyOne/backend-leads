@@ -7,6 +7,7 @@ import com.br.semesperanca.backendleads.configuration.exception.NotFoundExceptio
 import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.repository.BranchOfficeRepository
 import com.br.semesperanca.backendleads.domain.repository.BranchOwnerRepository
+import com.br.semesperanca.backendleads.domain.repository.RealEstateAgencyRepository
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,6 +17,7 @@ import java.util.UUID
 class BranchOfficeService(
     private val repository: BranchOfficeRepository,
     private val branchOwnerRepository: BranchOwnerRepository,
+    private val realEstateAgencyRepository: RealEstateAgencyRepository,
 ) {
     @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN')")
     @Transactional
@@ -25,15 +27,21 @@ class BranchOfficeService(
                 NotFoundException("Responsável não encontrado")
             }
 
+        // A agência é a do responsável: filial e dono pertencem à mesma agência,
+        // e derivar evita o par de ids que divergiria. O id vem de `users`, mas a
+        // coluna da filial é associação — então a entidade é resolvida aqui.
+        val realEstateAgency =
+            realEstateAgencyRepository
+                .findById(branchOwner.realEstateAgencyId!!)
+                .orElseThrow { NotFoundException("Agência imobiliária não encontrada") }
+
         if (repository.existsByRealEstateAgencyIdAndName(branchOwner.realEstateAgencyId!!, request.name)) {
             throw IllegalStateException("Já existe uma filial com este nome nesta agência")
         }
 
         val branchOffice =
             BranchOffice(
-                // A agência é a do responsável: filial e dono pertencem à mesma
-                // agência, e derivar evita o par de ids que divergiria.
-                realEstateAgencyId = branchOwner.realEstateAgencyId,
+                realEstateAgency = realEstateAgency,
                 branchOwner = branchOwner,
                 name = request.name,
                 address = request.address,
@@ -86,7 +94,7 @@ class BranchOfficeService(
     private fun toResponse(branchOffice: BranchOffice): BranchOfficeResponse =
         BranchOfficeResponse(
             id = branchOffice.id,
-            realEstateAgencyId = branchOffice.realEstateAgencyId,
+            realEstateAgencyId = branchOffice.realEstateAgency?.id,
             branchOwnerId = branchOffice.branchOwner?.id,
             name = branchOffice.name,
             address = branchOffice.address,

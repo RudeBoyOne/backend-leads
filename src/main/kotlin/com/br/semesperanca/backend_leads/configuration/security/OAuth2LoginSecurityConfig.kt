@@ -75,6 +75,8 @@ class OAuth2LoginSecurityConfig(
                     // é só o piso, e quem decide *quais* registros é o escopo da
                     // role. Um corretor entra no seu próprio registro e recebe 404
                     // no do colega — nunca 403, que confirmaria a existência.
+                    .requestMatchers(HttpMethod.GET, "/real-estate-agencies/**")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
                     .requestMatchers(HttpMethod.GET, "/branch-offices/**")
                     .authenticated()
                     .requestMatchers(HttpMethod.GET, "/real-estate-agents/**")
@@ -87,6 +89,12 @@ class OAuth2LoginSecurityConfig(
                     // Escrita é `FULL_ADMIN` ou `ADMIN`, e o `@PreAuthorize` do
                     // service repete a regra: a camada de URL rejeita cedo, a do
                     // service protege quem chama o método por fora do HTTP.
+                    // A agência é exceção: cada uma é um tenant com seu próprio
+                    // `branch_owner`, então criação e edição são só da raiz.
+                    .requestMatchers(HttpMethod.POST, "/real-estate-agencies")
+                    .hasRole("FULL_ADMIN")
+                    .requestMatchers(HttpMethod.PUT, "/real-estate-agencies/**")
+                    .hasRole("FULL_ADMIN")
                     .requestMatchers(HttpMethod.POST, "/branch-offices", "/real-estate-agents", "/managers")
                     .hasAnyRole("FULL_ADMIN", "ADMIN")
                     .requestMatchers(HttpMethod.PUT, "/branch-offices/**", "/real-estate-agents/**")

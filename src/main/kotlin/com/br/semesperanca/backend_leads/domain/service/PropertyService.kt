@@ -32,7 +32,7 @@ class PropertyService(
             Property(
                 // A agência é a da filial. Aceitar as duas no corpo permitiria um imóvel
                 // cujo `real_estate_agency_id` não é o da filial que o escopo percorre.
-                realEstateAgencyId = branchOffice.realEstateAgencyId,
+                realEstateAgencyId = branchOffice.realEstateAgency?.id,
                 branchOffice = branchOffice,
                 title = request.title,
                 description = request.description,
@@ -54,9 +54,8 @@ class PropertyService(
 
     fun findById(id: UUID): PropertyResponse = toResponse(findPropertyById(id))
 
-    fun searchByTitle(title: String): List<PropertyResponse> =
-        repository.searchByTitle(title).map { toResponse(it) }
-    
+    fun searchByTitle(title: String): List<PropertyResponse> = repository.searchByTitle(title).map { toResponse(it) }
+
     fun findAll(
         realEstateAgencyId: UUID?,
         active: Boolean?,
@@ -100,7 +99,7 @@ class PropertyService(
     @Transactional
     fun toggleActive(id: UUID): PropertyResponse {
         val property = findPropertyById(id)
-        property.active = !property.active
+        property.active = !(property.active ?: false)
         return toResponse(repository.save(property))
     }
 
@@ -113,8 +112,7 @@ class PropertyService(
     private fun findBranchOfficeById(id: UUID): BranchOffice =
         branchOfficeRepository.findById(id).orElseThrow { NotFoundException("Filial não encontrada") }
 
-    private fun findPropertyById(id: UUID): Property =
-        repository.findById(id).orElseThrow { NotFoundException("Imóvel não encontrado") }
+    private fun findPropertyById(id: UUID): Property = repository.findById(id).orElseThrow { NotFoundException("Imóvel não encontrado") }
 
     private fun buildSpec(
         realEstateAgencyId: UUID?,
@@ -174,9 +172,8 @@ class PropertyService(
             state = property.state,
             zipCode = property.zipCode,
             status = property.status,
-            active = property.active,
+            active = property.active ?: false,
             createdAt = property.createdAt,
             updatedAt = property.updatedAt,
         )
-
 }

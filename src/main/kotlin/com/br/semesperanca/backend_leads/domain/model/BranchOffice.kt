@@ -20,8 +20,15 @@ class BranchOffice(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     var id: UUID? = null,
-    @Column(name = "real_estate_agency_id", nullable = false)
-    var realEstateAgencyId: UUID? = null,
+    /**
+     * `branch_office.real_estate_agency_id` é uma associação de verdade, e não
+     * uma coluna UUID crua: a agência é o tenant da filial e precisa ser
+     * resolvível como entidade (nome, cnpj) a partir da filial, sem um segundo
+     * lookup por id — e o id sai de graça com `realEstateAgency?.id`.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "real_estate_agency_id", nullable = false)
+    var realEstateAgency: RealEstateAgency? = null,
     /**
      * mapsTo "branch_office.branch_owner_id: NOT NULL, UNIQUE". A associação é real
      * (e não uma coluna UUID crua) porque o escopo do branch owner precisa percorrer

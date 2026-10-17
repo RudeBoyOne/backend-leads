@@ -4,6 +4,7 @@ import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.model.BranchOwner
 import com.br.semesperanca.backendleads.domain.model.Lead
 import com.br.semesperanca.backendleads.domain.model.Property
+import com.br.semesperanca.backendleads.domain.model.RealEstateAgency
 import com.br.semesperanca.backendleads.domain.model.Team
 import com.br.semesperanca.backendleads.domain.model.user.Manager
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent
@@ -21,7 +22,7 @@ import org.springframework.data.jpa.domain.Specification
  * Um tipo ausente não falha em produção — devolve "sem restrição" — porque
  * `Role`, `Plan`, `Portal` e as tabelas de IoT realmente não têm dono na
  * hierarquia. A lista fechada abaixo é o contrato: ela é exaustiva para o
- * negócio, e o teste cobre exatamente esses sete tipos.
+ * negócio, e o teste cobre exatamente esses oito tipos.
  */
 object DataScope {
     /**
@@ -34,7 +35,7 @@ object DataScope {
      * fosse eager, `UserRepository` (que não tem dono na hierarquia) exigiria
      * autenticação e a autenticação ficaria impossível de fazer.
      *
-     * Para os sete tipos escopados a falha continua fechada: sem principal,
+     * Para os oito tipos escopados a falha continua fechada: sem principal,
      * [PrincipalResolver.current] estoura e a consulta não sai.
      */
     fun <T : Any> forType(type: Class<T>): Specification<T> {
@@ -45,6 +46,7 @@ object DataScope {
         return when (type) {
             BranchOwner::class.java -> scope.forBranchOwner() as Specification<T>
             BranchOffice::class.java -> scope.forBranchOffice() as Specification<T>
+            RealEstateAgency::class.java -> scope.forRealEstateAgency() as Specification<T>
             Manager::class.java -> scope.forManager() as Specification<T>
             RealEstateAgent::class.java -> scope.forRealEstateAgent() as Specification<T>
             Team::class.java -> scope.forTeam() as Specification<T>
@@ -66,6 +68,7 @@ object DataScope {
         listOf(
             BranchOwner::class.java,
             BranchOffice::class.java,
+            RealEstateAgency::class.java,
             Manager::class.java,
             RealEstateAgent::class.java,
             Team::class.java,

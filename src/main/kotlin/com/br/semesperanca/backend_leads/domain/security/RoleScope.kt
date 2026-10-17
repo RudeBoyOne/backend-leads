@@ -4,6 +4,7 @@ import com.br.semesperanca.backendleads.domain.model.BranchOffice
 import com.br.semesperanca.backendleads.domain.model.BranchOwner
 import com.br.semesperanca.backendleads.domain.model.Lead
 import com.br.semesperanca.backendleads.domain.model.Property
+import com.br.semesperanca.backendleads.domain.model.RealEstateAgency
 import com.br.semesperanca.backendleads.domain.model.Team
 import com.br.semesperanca.backendleads.domain.model.TeamAgent
 import com.br.semesperanca.backendleads.domain.model.user.Manager
@@ -44,6 +45,20 @@ class RoleScope(
     private val principal: Principal,
 ) {
     // ------------------------------------------------------------------ dono
+
+    /**
+     * A agência é o tenant: não tem dono acima, então o escopo é a própria
+     * agência do usuário (`users.real_estate_agency_id`), resolvida na consulta
+     * como os demais — um FULL_ADMIN vê todas, e os demais veem a sua.
+     */
+    fun forRealEstateAgency(): Specification<RealEstateAgency> =
+        if (principal.isFullAdmin) {
+            unrestricted()
+        } else {
+            Specification { root, parent, cb ->
+                root.get<UUID>("id").`in`(agencyOfPrincipal(parent, cb))
+            }
+        }
 
     fun forBranchOwner(): Specification<BranchOwner> =
         if (principal.isFullAdmin) {
@@ -219,6 +234,17 @@ class RoleScope(
         parent.subquery(UUID::class.javaObjectType).apply {
             val user: Root<User> = from(User::class.java)
             select(user.get<Any>("branchOffice").get("id"))
+                .where(cb.equal(user.get<UUID>("id"), principal.id))
+        }
+
+    /** A agência dona do usuário autenticado, de `users.real_estate_agency_id`. */
+    private fun agencyOfPrincipal(
+        parent: AbstractQuery<*>,
+        cb: CriteriaBuilder,
+    ): Subquery<UUID> =
+        parent.subquery(UUID::class.javaObjectType).apply {
+            val user: Root<User> = from(User::class.java)
+            select(user.get<UUID>("realEstateAgencyId"))
                 .where(cb.equal(user.get<UUID>("id"), principal.id))
         }
 
