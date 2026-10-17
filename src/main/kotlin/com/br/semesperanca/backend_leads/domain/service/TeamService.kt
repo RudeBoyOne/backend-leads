@@ -4,11 +4,13 @@ import com.br.semesperanca.backendleads.application.mapper.TeamMapper
 import com.br.semesperanca.backendleads.application.model.request.CreateTeamRequest
 import com.br.semesperanca.backendleads.application.model.request.UpdateTeamRequest
 import com.br.semesperanca.backendleads.application.model.response.TeamResponse
+import com.br.semesperanca.backendleads.configuration.exception.NotFoundException
 import com.br.semesperanca.backendleads.domain.model.Team
 import com.br.semesperanca.backendleads.domain.model.TeamAgent
 import com.br.semesperanca.backendleads.domain.model.user.Manager
 import com.br.semesperanca.backendleads.domain.repository.TeamAgentRepository
 import com.br.semesperanca.backendleads.domain.repository.TeamRepository
+import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,6 +21,7 @@ import java.util.UUID
 class TeamService(
     private val teamRepository: TeamRepository,
     private val teamAgentRepository: TeamAgentRepository,
+    private val realEstateAgentRepository: RealEstateAgentRepository,
     private val teamMapper: TeamMapper,
 ) {
     @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
@@ -29,23 +32,28 @@ class TeamService(
         return teamMapper.toResponse(teamRepository.save(team))
     }
 
-    fun findById(id: UUID): TeamResponse =
-        teamMapper.toResponse(findTeamById(id))
+    @Transactional(readOnly = true)
+    fun findById(id: UUID): TeamResponse = teamMapper.toResponse(findTeamById(id))
 
-    fun findAll(): List<TeamResponse> =
-        teamRepository.findAll().map { teamMapper.toResponse(it) }
+    @Transactional(readOnly = true)
+    fun findAll(): List<TeamResponse> = teamRepository.findAll().map { teamMapper.toResponse(it) }
 
-    fun findByName(name: String): List<TeamResponse> =
-        teamRepository.findByNameContainingIgnoreCase(name).map { teamMapper.toResponse(it) }
+    @Transactional(readOnly = true)
+    fun findByName(name: String): List<TeamResponse> = teamRepository.findByNameContainingIgnoreCase(name).map { teamMapper.toResponse(it) }
 
+    @Transactional(readOnly = true)
     fun findByBranchOfficeId(branchOfficeId: UUID): List<TeamResponse> =
-        teamRepository.findAll()
+        teamRepository
+            .findAll()
             .filter { it.manager?.branchOffice?.id == branchOfficeId }
             .map { teamMapper.toResponse(it) }
 
     @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
-    fun update(id: UUID, request: UpdateTeamRequest): TeamResponse {
+    fun update(
+        id: UUID,
+        request: UpdateTeamRequest,
+    ): TeamResponse {
         val team = findTeamById(id)
         request.managerId?.let { team.manager = findManagerReference(it) }
         team.name = request.name
@@ -63,35 +71,48 @@ class TeamService(
 
     @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
-    fun addAgent(teamId: UUID, agentId: UUID) {
+    fun addAgent(
+        teamId: UUID,
+        agentId: UUID,
+    ) {
         val team = findTeamById(teamId)
 
         if (teamAgentRepository.existsByTeamIdAndRealEstateAgentId(teamId, agentId)) {
             throw IllegalStateException("Corretor já pertence a este time")
         }
 
-        val teamAgent = TeamAgent(
-            team = team,
-            joinedAt = LocalDateTime.now(),
-        )
+        val agent =
+            realEstateAgentRepository
+                .findById(agentId)
+                .orElseThrow { NotFoundException("Corretor não encontrado") }
+
+        val teamAgent =
+            TeamAgent(
+                team = team,
+                realEstateAgent = agent,
+                joinedAt = LocalDateTime.now(),
+            )
         teamAgentRepository.save(teamAgent)
     }
 
     @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
-    fun removeAgent(teamId: UUID, agentId: UUID) {
-        val teamAgent = teamAgentRepository.findByTeamId(teamId)
-            .find { it.realEstateAgent?.id == agentId }
-            ?: throw RuntimeException("Corretor não encontrado neste time")
+    fun removeAgent(
+        teamId: UUID,
+        agentId: UUID,
+    ) {
+        val teamAgent =
+            teamAgentRepository
+                .findByTeamId(teamId)
+                .find { it.realEstateAgent?.id == agentId }
+                ?: throw RuntimeException("Corretor não encontrado neste time")
         teamAgentRepository.delete(teamAgent)
     }
 
-    fun findAgentsByTeamId(teamId: UUID): List<UUID> =
-        teamAgentRepository.findByTeamId(teamId).mapNotNull { it.realEstateAgent?.id }
+    @Transactional(readOnly = true)
+    fun findAgentsByTeamId(teamId: UUID): List<UUID> = teamAgentRepository.findByTeamId(teamId).mapNotNull { it.realEstateAgent?.id }
 
-    private fun findTeamById(id: UUID): Team =
-        teamRepository.findById(id).orElseThrow { RuntimeException("Time não encontrado") }
+    private fun findTeamById(id: UUID): Team = teamRepository.findById(id).orElseThrow { RuntimeException("Time não encontrado") }
 
-    private fun findManagerReference(managerId: UUID): Manager =
-        Manager().apply { id = managerId }
+    private fun findManagerReference(managerId: UUID): Manager = Manager().apply { id = managerId }
 }

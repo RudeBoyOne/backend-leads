@@ -4,11 +4,14 @@ import com.br.semesperanca.backendleads.domain.model.RealEstateAgency
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.util.Optional
 import java.util.UUID
 
 @Repository
 interface RealEstateAgencyRepository : ScopedRepository<RealEstateAgency, UUID> {
     fun existsByEmail(email: String): Boolean
+
+    fun findByEmail(email: String): Optional<RealEstateAgency>
 
     fun existsByCnpj(cnpj: String): Boolean
 

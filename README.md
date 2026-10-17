@@ -1,6 +1,7 @@
 # Gerenciador de Leads Imobiliários
 
-Link do Repositório: <https://github.com/RudeBoyOne/backend-leads>
+- Link do Repositório Backend: <https://github.com/RudeBoyOne/backend-leads>
+- Link do Repositório Frontend: <https://github.com/RudeBoyOne/frontend-leads>
 
 Nossa aplicação tem como objetivo servir para empresas do ramo imobiliário, uma aplicação que forneça a possibilidade de uma centralização de serviços internos, como: receber leads dos portais de imóveis, distribui-los para os corretores responsáveis, fazer o atendimento e acompanhamento do processo de vendas, gerar insights e relatórios e gerenciamento de equipes.
 

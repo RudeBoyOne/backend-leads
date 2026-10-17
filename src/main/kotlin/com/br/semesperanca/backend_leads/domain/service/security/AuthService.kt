@@ -9,6 +9,7 @@ import com.br.semesperanca.backendleads.application.model.response.RealEstateAge
 import com.br.semesperanca.backendleads.domain.model.Role
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent
 import com.br.semesperanca.backendleads.domain.model.user.User
+import com.br.semesperanca.backendleads.domain.repository.RealEstateAgencyRepository
 import com.br.semesperanca.backendleads.domain.repository.RoleRepository
 import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository
 import com.br.semesperanca.backendleads.domain.repository.user.UserRepository
@@ -24,6 +25,7 @@ class AuthService(
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService,
     private val userRepository: UserRepository,
+    private val realEstateAgencyRepository: RealEstateAgencyRepository,
 ) {
     fun login(request: LoginRequest): LoginResponse {
         val user: User =
@@ -54,6 +56,11 @@ class AuthService(
                 .findByName("FULL_ADMIN")
                 .orElseThrow { RuntimeException("Role não encontrada") }
 
+        val systemAgency =
+            realEstateAgencyRepository
+                .findByEmail(SYSTEM_AGENCY_EMAIL)
+                .orElseThrow { RuntimeException("Agência do sistema não encontrada") }
+
         val agent =
             RealEstateAgent(
                 creci =
@@ -69,6 +76,7 @@ class AuthService(
                 setPassword(passwordEncoder.encode(request.password))
                 this.role = role
                 isActive = true
+                realEstateAgencyId = systemAgency.id
             }
 
         return toResponse(repository.save(agent))
@@ -124,5 +132,9 @@ class AuthService(
 
         user.setPassword(passwordEncoder.encode(request.newPassword))
         userRepository.save(user)
+    }
+
+    companion object {
+        private const val SYSTEM_AGENCY_EMAIL = "sistema@backendleads.com.br"
     }
 }

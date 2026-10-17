@@ -10,11 +10,16 @@ import java.util.UUID
 
 @Repository
 interface LeadRepository : ScopedRepository<Lead, UUID> {
-    @Query("""
-        SELECT 1 FROM Lead 1
-        WHERE LOWER(1.name) LIKE LOWER(CONCAT('%', :search, '%'))
-        OR LOWER(1.email) LIKE LOWER(CONCAT('%', :search, '%'))
-        OR LOWER(1.message) LIKE LOWER(CONCAT('%', :search, '%'))
-    """)
-    fun findByFilters (@Param("search") search: String, pageable: Pageable): Page<Lead>
+    @Query(
+        """
+        SELECT l FROM Lead l
+        WHERE LOWER(l.name) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(l.email) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(l.message) LIKE LOWER(CONCAT('%', :search, '%'))
+    """,
+    )
+    fun findByFilters(
+        @Param("search") search: String,
+        pageable: Pageable,
+    ): Page<Lead>
 }
