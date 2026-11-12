@@ -61,7 +61,7 @@ class InsightClientTest {
 
     private fun lead(
         status: String? = "new",
-        phoneNumber: String? = "11999998888",
+        phoneNumber: Long? = 11999998888L,
         timestamp: Instant? = Instant.parse("2026-01-10T12:00:00Z"),
     ) = Lead(
         originLeadId = "ORIGIN-1",
@@ -186,7 +186,7 @@ class InsightClientTest {
 
     @Test
     fun `RN04 - telefone com 11 caracteres e dividido em ddd e phone`() {
-        val corpo = enviarECapturarCorpo(lead(phoneNumber = "11999998888"))
+        val corpo = enviarECapturarCorpo(lead(phoneNumber = 11999998888L))
 
         assertTrue(corpo.contains("\"ddd\":\"11\""), corpo)
         assertTrue(corpo.contains("\"phone\":\"999998888\""), corpo)
@@ -194,15 +194,15 @@ class InsightClientTest {
 
     @Test
     fun `RN04 - telefone com exatamente 2 caracteres (limite) gera ddd e phone vazio`() {
-        val corpo = enviarECapturarCorpo(lead(phoneNumber = "11"))
+        val corpo = enviarECapturarCorpo(lead(phoneNumber = 11L))
 
         assertTrue(corpo.contains("\"ddd\":\"11\""), corpo)
         assertTrue(corpo.contains("\"phone\":\"\""), corpo)
     }
 
     @ParameterizedTest(name = "phoneNumber \"{0}\" nao e dividido")
-    @CsvSource("1", "''")
-    fun `RN04 - telefone com menos de 2 caracteres nao gera ddd nem phone`(phoneNumber: String) {
+    @CsvSource("1", "0")
+    fun `RN04 - telefone com menos de 2 digitos nao gera ddd nem phone`(phoneNumber: Long) {
         val corpo = enviarECapturarCorpo(lead(phoneNumber = phoneNumber))
 
         assertFalse(corpo.contains("\"ddd\":\""), corpo)

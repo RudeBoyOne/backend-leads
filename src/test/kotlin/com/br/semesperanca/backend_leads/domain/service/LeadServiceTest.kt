@@ -53,7 +53,7 @@ class LeadServiceTest {
         LeadService(leadRepository, emailService, mailProperties, insightClient, realEstateAgentRepository)
 
     private val dto =
-        LeadReceivedNotificationDTO(leadIdDb = "db-1", originLeadId = "ORIGIN-1", leadOrigin = "ZAP")
+        LeadReceivedNotificationDTO(leadId = "db-1", originLeadId = "ORIGIN-1", leadOrigin = "ZAP")
 
     private fun leadEncontrado() = Lead(originLeadId = "ORIGIN-1", leadOrigin = "ZAP")
 
