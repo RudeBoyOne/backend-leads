@@ -59,11 +59,13 @@ data class LeadDTO(
     val insightId: String?,
     val createdAt: String?,
     val updatedAt: String?,
+    val id: UUID? = null,
 ) {
     companion object {
         @JvmStatic
         fun fromLead(lead: Lead): LeadDTO =
             LeadDTO(
+                id = lead.id,
                 leadOrigin = lead.leadOrigin ?: "",
                 timestamp = lead.timestamp?.toString() ?: "",
                 originLeadId = lead.originLeadId ?: "",
