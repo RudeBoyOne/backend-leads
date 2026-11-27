@@ -1,12 +1,18 @@
 package com.br.semesperanca.backendleads.configuration.security
 
+import com.br.semesperanca.backendleads.domain.repository.user.UserRepository
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpMethod
+import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.authentication.ProviderManager
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.core.userdetails.UserDetailsService
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
@@ -22,6 +28,7 @@ class OAuth2LoginSecurityConfig(
     private val oAuth2SuccessHandler: OAuth2SuccessHandler,
     private val customAuthenticationEntryPoint: CustomAuthenticationEntryPoint,
     private val customAccessDeniedHandler: CustomAccessDeniedHandler,
+    private val userRepository: UserRepository,
 ) {
     @Bean
     @Order(1)
@@ -46,7 +53,7 @@ class OAuth2LoginSecurityConfig(
                 auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
-                    .requestMatchers(HttpMethod.POST, "/auth/login")
+                    .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/register")
                     .permitAll()
                     .requestMatchers("/actuator/health/**")
                     .permitAll()
@@ -118,4 +125,20 @@ class OAuth2LoginSecurityConfig(
 
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
+
+    @Bean
+    fun userDetailsService(): UserDetailsService =
+        UserDetailsService { email ->
+            userRepository.findByEmail(email).orElseThrow { UsernameNotFoundException("Usuário não encontrado") }
+        }
+
+    @Bean
+    fun authenticationManager(
+        userDetailsService: UserDetailsService,
+        passwordEncoder: PasswordEncoder,
+    ): AuthenticationManager {
+        val provider = DaoAuthenticationProvider(userDetailsService)
+        provider.setPasswordEncoder(passwordEncoder)
+        return ProviderManager(provider)
+    }
 }

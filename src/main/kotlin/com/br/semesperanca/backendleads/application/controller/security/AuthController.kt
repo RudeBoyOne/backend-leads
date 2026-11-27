@@ -3,6 +3,7 @@ package com.br.semesperanca.backendleads.application.controller.security
 import com.br.semesperanca.backendleads.application.model.request.ChangePasswordRequest
 import com.br.semesperanca.backendleads.application.model.request.CreateFullAdminRequest
 import com.br.semesperanca.backendleads.application.model.request.LoginRequest
+import com.br.semesperanca.backendleads.application.model.request.RegisterRequest
 import com.br.semesperanca.backendleads.application.model.response.LoginResponse
 import com.br.semesperanca.backendleads.application.model.response.RealEstateAgentResponse
 import com.br.semesperanca.backendleads.domain.service.security.AuthService
@@ -30,6 +31,12 @@ class AuthController(
     fun login(
         @RequestBody @Valid request: LoginRequest,
     ): ResponseEntity<LoginResponse> = ResponseEntity.ok(authService.login(request))
+
+    @PostMapping("/register")
+    @Operation(summary = "Registrar usuário", description = "Cria usuário com role USER e retorna JWT")
+    fun register(
+        @RequestBody @Valid request: RegisterRequest,
+    ): ResponseEntity<LoginResponse> = ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request))
 
     @PostMapping("/register/full-admin")
     @Operation(

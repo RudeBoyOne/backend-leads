@@ -3,9 +3,11 @@ package com.br.semesperanca.backendleads.domain.service.security
 import com.br.semesperanca.backendleads.application.model.request.ChangePasswordRequest
 import com.br.semesperanca.backendleads.application.model.request.CreateFullAdminRequest
 import com.br.semesperanca.backendleads.application.model.request.LoginRequest
+import com.br.semesperanca.backendleads.application.model.request.RegisterRequest
 import com.br.semesperanca.backendleads.application.model.request.ResetPasswordRequest
 import com.br.semesperanca.backendleads.application.model.response.LoginResponse
 import com.br.semesperanca.backendleads.application.model.response.RealEstateAgentResponse
+import com.br.semesperanca.backendleads.configuration.exception.EmailAlreadyExistsException
 import com.br.semesperanca.backendleads.domain.model.Role
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent
 import com.br.semesperanca.backendleads.domain.model.user.User
@@ -13,6 +15,8 @@ import com.br.semesperanca.backendleads.domain.repository.RealEstateAgencyReposi
 import com.br.semesperanca.backendleads.domain.repository.RoleRepository
 import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository
 import com.br.semesperanca.backendleads.domain.repository.user.UserRepository
+import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -26,23 +30,41 @@ class AuthService(
     private val jwtService: JwtService,
     private val userRepository: UserRepository,
     private val realEstateAgencyRepository: RealEstateAgencyRepository,
+    private val authenticationManager: AuthenticationManager,
 ) {
     fun login(request: LoginRequest): LoginResponse {
-        val user: User =
-            userRepository
-                .findByEmail(request.email)
-                .orElseThrow { RuntimeException("Usuário não encontrado") }
-
-        if (!user.isActive) {
-            throw RuntimeException("Usuário inativo")
-        }
-
-        if (!passwordEncoder.matches(request.password, user.getPassword())) {
-            throw RuntimeException("Senha inválida")
-        }
+        val authentication =
+            authenticationManager.authenticate(
+                UsernamePasswordAuthenticationToken(request.email, request.password),
+            )
+        val user = authentication.principal as User
 
         val token = jwtService.generateToken(user.id!!, user.email, user.role?.name)
         return LoginResponse(token)
+    }
+
+    @Transactional
+    fun register(request: RegisterRequest): LoginResponse {
+        if (userRepository.existsByEmail(request.email)) {
+            throw EmailAlreadyExistsException(request.email)
+        }
+
+        val role =
+            roleRepository
+                .findByName("USER")
+                .orElseThrow { IllegalStateException("Role USER não encontrada") }
+
+        val user =
+            User(
+                realEstateAgencyId = request.realEstateAgencyId,
+                role = role,
+                name = request.name,
+                email = request.email,
+                isActive = true,
+            ).apply { setPassword(passwordEncoder.encode(request.password)) }
+
+        val saved = userRepository.save(user)
+        return LoginResponse(jwtService.generateToken(saved.id!!, saved.email, saved.role?.name))
     }
 
     @Transactional
