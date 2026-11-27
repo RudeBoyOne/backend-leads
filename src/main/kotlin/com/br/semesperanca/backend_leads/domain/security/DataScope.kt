@@ -10,34 +10,7 @@ import com.br.semesperanca.backendleads.domain.model.user.Manager
 import com.br.semesperanca.backendleads.domain.model.user.RealEstateAgent
 import org.springframework.data.jpa.domain.Specification
 
-/**
- * Entrega a `Specification` de escopo de cada entidade escopada.
- *
- * A [com.br.semesperanca.backendleads.domain.repository.ScopedRepositoryImpl] é
- * genérica e não conhece o domínio, então quem faz o despacho de tipo para tipo
- * é este objeto. A consequência útil é que a lista de entidades escopadas é
- * auditável num lugar só: um repositório novo precisa aparecer aqui para ser
- * escopado, e o `ScopeCoverageTest` trava essa cobertura.
- *
- * Um tipo ausente não falha em produção — devolve "sem restrição" — porque
- * `Role`, `Plan`, `Portal` e as tabelas de IoT realmente não têm dono na
- * hierarquia. A lista fechada abaixo é o contrato: ela é exaustiva para o
- * negócio, e o teste cobre exatamente esses oito tipos.
- */
 object DataScope {
-    /**
-     * O principal é resolvido **depois** do teste de escopo, e nunca antes.
-     *
-     * Resolvê-lo primeiro seria um deadlock lógico: [CustomJwtAuthenticationConverter]
-     * lê `UserRepository` para descobrir a role de quem está entrando, e
-     * [AuthService] lê o mesmo repositório no login — nenhum dos dois tem
-     * principal nenhum ainda, porque o token ainda não existe. Se a resolução
-     * fosse eager, `UserRepository` (que não tem dono na hierarquia) exigiria
-     * autenticação e a autenticação ficaria impossível de fazer.
-     *
-     * Para os oito tipos escopados a falha continua fechada: sem principal,
-     * [PrincipalResolver.current] estoura e a consulta não sai.
-     */
     fun <T : Any> forType(type: Class<T>): Specification<T> {
         if (type !in scopedTypes) return unrestricted()
 
@@ -56,14 +29,8 @@ object DataScope {
         }
     }
 
-    /**
-     * A `Specification` é reconstruída a cada chamada, nunca guardada em campo: o
-     * repositório é um singleton e o principal muda a cada requisição. Cachear
-     * aqui serviria o escopo do usuário anterior para o próximo.
-     */
     private fun <T> unrestricted(): Specification<T> = Specification.unrestricted()
 
-    /** Tipos com regra de escopo. Existe para o teste de cobertura iterate sobre ele. */
     val scopedTypes: List<Class<*>> =
         listOf(
             BranchOwner::class.java,

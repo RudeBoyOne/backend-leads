@@ -14,11 +14,6 @@ class MqttProperties {
     var password: String? = null
     var qos: Int = 1
 
-    /**
-     * Prefixo do topic, derivado de [topic] removendo o wildcard final.
-     * Usado pelo [com.br.semesperanca.backendleads.domain.service.iot.SensorReadingHandler]
-     * para validar se a mensagem veio do topic esperado.
-     */
     val topicPrefix: String
         get() = topic.removeSuffix("#").removeSuffix("/")
 }

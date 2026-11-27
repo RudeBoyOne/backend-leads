@@ -6,11 +6,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.Instant
 
-/**
- * Teste de unidade da entidade [Lead] (camada de dominio): callbacks de ciclo de vida.
- * Sem mocks: a entidade e instanciada diretamente e os @Test sao os drivers que
- * chamam prePersist/preUpdate (o JPA os chamaria em producao).
- */
 class LeadTest {
     @Test
     fun `prePersist preenche createdAt e updatedAt quando nulos`() {

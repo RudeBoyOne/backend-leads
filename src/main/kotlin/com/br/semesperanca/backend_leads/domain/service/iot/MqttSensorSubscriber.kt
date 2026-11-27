@@ -8,16 +8,6 @@ import org.springframework.context.SmartLifecycle
 import org.springframework.stereotype.Component
 import java.util.concurrent.Executor
 
-/**
- * Subscriber MQTT que conecta ao broker via WebSocket e assina o topic
- * de metricas dos sensores IoT.
- *
- * Implementa [SmartLifecycle] para que o start() rode depois do contexto
- * estar pronto (Flyway, DataSource, etc.) e o stop() no shutdown.
- *
- * Se [MqttProperties.enabled] for false, start() e no-op — util em testes
- * e em ambientes sem broker.
- */
 @Component
 class MqttSensorSubscriber(
     private val mqttProperties: MqttProperties,

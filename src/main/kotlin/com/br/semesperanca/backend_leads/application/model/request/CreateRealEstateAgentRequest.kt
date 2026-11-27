@@ -18,10 +18,6 @@ data class CreateRealEstateAgentRequest(
     val password: String,
     @field:NotBlank(message = "CRECI é obrigatório")
     val creci: String,
-    /**
-     * Obrigatória pela mesma razão do gerente: a lotação define a agência (que é
-     * `NOT NULL` em `users`) e define a qual subárvore o corretor pertence.
-     */
     @field:NotNull(message = "branchOfficeId é obrigatório")
     val branchOfficeId: UUID,
 )

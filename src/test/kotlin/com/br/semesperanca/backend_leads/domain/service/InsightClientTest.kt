@@ -32,24 +32,9 @@ import java.io.IOException
 import java.time.Instant
 import java.time.OffsetDateTime
 
-/**
- * Teste de unidade (caixa-branca) de [InsightClient.createInsight] e do mapeamento
- * privado mapToInsightRequest (exercitado via createInsight).
- *
- * Recursos de teste usados:
- *  - MOCK  : leadRepository (Mockito) - verifica se o `save` do insightId ocorre.
- *  - STUB  : MockRestServiceServer faz o papel do servico externo de insights e devolve
- *            respostas pre-definidas (202 com id, 200, 500, timeout...). Nao sobe Spring
- *            nem rede.
- *  - DRIVER: cada @Test chama createInsight diretamente. Como o contexto Spring nao
- *            existe aqui, o @Async nao atua e a chamada roda de forma sincrona,
- *            o que torna os testes deterministicos.
- *
- * Os caminhos C1..C5 correspondem aos caminhos independentes do GFC de createInsight (Ex. 8).
- */
 class InsightClientTest {
-    private val leadRepository = mock<LeadRepository>() // MOCK
-    private lateinit var server: MockRestServiceServer // STUB do servico de insights
+    private val leadRepository = mock<LeadRepository>() 
+    private lateinit var server: MockRestServiceServer 
     private lateinit var client: InsightClient
 
     @BeforeEach
@@ -73,7 +58,6 @@ class InsightClientTest {
         timestamp = timestamp,
     )
 
-    /** Responde 202 com id e devolve o corpo JSON que o InsightClient enviou. */
     private fun enviarECapturarCorpo(lead: Lead): String {
         var corpo = ""
         server
@@ -86,7 +70,6 @@ class InsightClientTest {
         return corpo
     }
 
-    // ---------------------------------------------------------------- RN03 (caminhos do GFC)
 
     @Test
     fun `C5 RN03 - 202 com id persiste o insightId no lead`() {
@@ -162,7 +145,6 @@ class InsightClientTest {
         verify(leadRepository, never()).save(any<Lead>())
     }
 
-    // ---------------------------------------------------------------- RN04: converted
 
     @ParameterizedTest(name = "status \"{0}\" => converted={1}")
     @CsvSource("converted,true", "CONVERTED,true", "Converted,true", "new,false", "contacted,false")
@@ -182,7 +164,6 @@ class InsightClientTest {
         assertTrue(corpo.contains("\"converted\":false"), corpo)
     }
 
-    // ---------------------------------------------------------------- RN04: telefone (valor limite = 2 caracteres)
 
     @Test
     fun `RN04 - telefone com 11 caracteres e dividido em ddd e phone`() {
@@ -217,7 +198,6 @@ class InsightClientTest {
         assertFalse(corpo.contains("\"phone\":\""), corpo)
     }
 
-    // ---------------------------------------------------------------- RN04: timestamp
 
     @Test
     fun `RN04 - usa o timestamp do lead quando informado`() {
@@ -234,7 +214,7 @@ class InsightClientTest {
 
         val valor = Regex("\"timestamp\":\"([^\"]+)\"").find(corpo)?.groupValues?.get(1)
         assertNotNull(valor, corpo)
-        val instante = OffsetDateTime.parse(valor) // lanca excecao se nao for ISO-8601 com offset
+        val instante = OffsetDateTime.parse(valor) 
         assertTrue(instante.isAfter(antes), "timestamp deveria ser o instante atual: $valor")
     }
 }

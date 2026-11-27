@@ -120,7 +120,6 @@ class RealEstateAgentService(
     private fun buildSpec(filter: UserFilterRequest): Specification<RealEstateAgent> =
         Specification { root, _, cb ->
             val predicates = mutableListOf<Predicate>()
-            // `isActive` é o atributo JPA; `active` é a coluna. Ver ManagerService.
             if (filter.active != null) {
                 predicates.add(cb.equal(root.get<Boolean>("isActive"), filter.active))
             }

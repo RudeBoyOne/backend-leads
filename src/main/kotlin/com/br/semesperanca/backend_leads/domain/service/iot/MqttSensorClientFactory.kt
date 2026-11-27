@@ -7,12 +7,6 @@ import com.hivemq.client.mqtt.mqtt3.message.auth.Mqtt3SimpleAuth
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
-/**
- * Factory do cliente MQTT async com transporte WebSocket.
- *
- * Seam de teste: em producao monta o client HiveMQ real; nos testes e
- * ubstituida por um mock que retorna um [Mqtt3AsyncClient] mockado.
- */
 @Component
 class MqttSensorClientFactory(
     private val mqttProperties: MqttProperties,

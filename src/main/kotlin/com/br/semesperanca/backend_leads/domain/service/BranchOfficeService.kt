@@ -27,9 +27,6 @@ class BranchOfficeService(
                 NotFoundException("Responsável não encontrado")
             }
 
-        // A agência é a do responsável: filial e dono pertencem à mesma agência,
-        // e derivar evita o par de ids que divergiria. O id vem de `users`, mas a
-        // coluna da filial é associação — então a entidade é resolvida aqui.
         val realEstateAgency =
             realEstateAgencyRepository
                 .findById(branchOwner.realEstateAgencyId!!)

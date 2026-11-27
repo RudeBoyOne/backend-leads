@@ -29,14 +29,6 @@ class BranchOwnerService(
     private val branchOfficeRepository: BranchOfficeRepository,
     private val passwordEncoder: PasswordEncoder,
 ) {
-    /**
-     * A role do responsável é ADMIN, e `branch_owner` é o único detentor dela — é
-     * isso que faz `hasRole("ADMIN")` significar "branch owner" em
-     * toda a camada de autorização, sem um segundo tipo de identidade.
-     *
-     * Só o root cria responsáveis: um branch owner que criasse outro receberia
-     * acesso a uma rede que ele não administra.
-     */
     @PreAuthorize("hasRole('FULL_ADMIN')")
     @Transactional
     fun create(request: CreateBranchOwnerRequest): BranchOwnerResponse {
@@ -56,9 +48,6 @@ class BranchOwnerService(
                 setPassword(passwordEncoder.encode(request.password))
                 this.role = role
                 isActive = true
-                // `users.branch_office_id` fica nulo: o responsável supervisiona N
-                // filiais, então não tem uma sede. A agência vem do pedido porque
-                // ele nasce antes de ter filial.
                 realEstateAgencyId = request.realEstateAgencyId
             }
 
@@ -74,11 +63,6 @@ class BranchOwnerService(
         pageable: Pageable,
     ): Page<BranchOwnerResponse> = repository.findAll(buildSpec(realEstateAgencyId, active, search), pageable).map { toResponse(it) }
 
-    /**
-     * O branch owner edita a si mesmo, e o root edita quem quiser. O
-     * `findById` abaixo é escopado, então o branch owner não chega ao registro de
-     * outro — não há `if` de papel que possa ser esquecido aqui.
-     */
     @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN')")
     @Transactional
     fun update(
@@ -105,11 +89,6 @@ class BranchOwnerService(
         return toResponse(repository.save(branchOwner))
     }
 
-    /**
-     * A filial é `NOT NULL` com `ON DELETE RESTRICT`, então o banco já recusaria a
-     * remoção. A checagem existe para dar o motivo em português, em vez de deixar
-     * o cliente receber uma violação de FK genérica.
-     */
     @PreAuthorize("hasRole('FULL_ADMIN')")
     @Transactional
     fun delete(id: UUID) {
@@ -135,7 +114,6 @@ class BranchOwnerService(
             if (realEstateAgencyId != null) {
                 predicates.add(cb.equal(root.get<Any>("realEstateAgencyId"), realEstateAgencyId))
             }
-            // `isActive` é o atributo JPA; `active` é a coluna.
             if (active != null) {
                 predicates.add(cb.equal(root.get<Boolean>("isActive"), active))
             }

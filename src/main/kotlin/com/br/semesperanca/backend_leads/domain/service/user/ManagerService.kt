@@ -31,11 +31,6 @@ class ManagerService(
     private val userRepository: UserRepository,
     private val branchOfficeRepository: BranchOfficeRepository,
 ) {
-    /**
-     * A filial vem do `BranchOfficeRepository` escopado, então a filial de outra
-     * agência não resolve e a criação sai em 404. É a mesma consulta que autoriza
-     * e que fornece a agência — não há comparação de papel nem id em lista.
-     */
     @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN')")
     @Transactional
     fun create(request: CreateManagerRequest): ManagerResponse {
@@ -57,10 +52,6 @@ class ManagerService(
                 this.role = role
                 isActive = true
                 this.branchOffice = branchOffice
-                // Derivada da filial, e não vinda do corpo: `users` tem
-                // `real_estate_agency_id NOT NULL`, e um gerente com filial de uma
-                // agência e agência de outra não pertence a nenhuma subárvore
-                // coerente.
                 realEstateAgencyId = branchOffice.realEstateAgency?.id
             }
 
@@ -77,9 +68,6 @@ class ManagerService(
     private fun buildSpec(filter: UserFilterRequest): Specification<Manager> =
         Specification { root, _, cb ->
             val predicates = mutableListOf<Predicate>()
-            // `isActive` é o nome do atributo JPA; `active` é o nome da coluna. A
-            // distinção importa: `root.get("active")` estoura em runtime, porque o
-            // Criteria resolve por atributo, não por coluna.
             if (filter.active != null) {
                 predicates.add(cb.equal(root.get<Boolean>("isActive"), filter.active))
             }

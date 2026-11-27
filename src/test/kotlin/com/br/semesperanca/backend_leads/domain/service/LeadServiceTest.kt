@@ -22,27 +22,12 @@ import org.springframework.dao.IncorrectResultSizeDataAccessException
 import org.springframework.data.jpa.domain.Specification
 import java.util.Optional
 
-/**
- * Teste de unidade (caixa-branca) de [LeadService.receiveLead],
- * caso de uso "Receber lead de portal".
- *
- * Recursos de teste usados (o JUnit cria uma instancia nova da classe por @Test,
- * entao cada teste comeca com dubles limpos):
- *  - MOCK : leadRepository, emailService, insightClient, realEstateAgentRepository.
- *           Substituem colaboradores externos (banco, SMTP, servico de insights) e
- *           permitem verificar interacoes (verify / inOrder / never).
- *  - STUB : `whenever(leadRepository.findOne(...)).thenReturn(...)` define a resposta
- *           pronta do repositorio; MailProperties e uma instancia real com valor fixo.
- *  - DRIVER: cada metodo @Test e o driver que chama receiveLead.
- */
 class LeadServiceTest {
-    // MOCKs
     private val leadRepository = mock<LeadRepository>()
     private val emailService = mock<EmailService>()
     private val insightClient = mock<InsightClient>()
-    private val realEstateAgentRepository = mock<RealEstateAgentRepository>() // nao usado em receiveLead
+    private val realEstateAgentRepository = mock<RealEstateAgentRepository>() 
 
-    // STUB (objeto real, valor fixo)
     private val mailProperties =
         MailProperties().apply {
             from = "no-reply@test"
@@ -99,7 +84,6 @@ class LeadServiceTest {
         service.receiveLead(dto)
 
         verify(leadRepository).findOne(any<Specification<Lead>>())
-        // nenhum outro metodo do repositorio (ex.: derivado, que ignora o escopo) pode ser usado
         verifyNoMoreInteractions(leadRepository)
     }
 
@@ -109,7 +93,6 @@ class LeadServiceTest {
 
         assertThrows(NotFoundException::class.java) { service.receiveLead(dto) }
 
-        // pos-condicao do caso de uso: o e-mail (passo 3) ja foi enviado
         verify(emailService).sendLeadReceived(dto, "equipe@imobiliaria.test")
         verify(insightClient, never()).createInsight(any())
     }

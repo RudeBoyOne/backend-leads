@@ -16,10 +16,6 @@ import java.util.UUID
 class RealEstateAgencyService(
     private val repository: RealEstateAgencyRepository,
 ) {
-    /**
-     * Só a raiz cria agência: cada agência é um tenant novo com seu próprio
-     * `branch_owner`, e um ADMIN só administra a rede que já existe na dele.
-     */
     @PreAuthorize("hasRole('FULL_ADMIN')")
     @Transactional
     fun create(request: CreateRealEstateAgencyRequest): RealEstateAgencyResponse {
@@ -56,8 +52,6 @@ class RealEstateAgencyService(
     ): RealEstateAgencyResponse {
         val agency = findAgencyById(id)
 
-        // A checagem compara com o valor atual: um update que não altera email ou
-        // CNPJ não pode cair na própria unicidade.
         if (agency.email != request.email && repository.existsByEmail(request.email)) {
             throw EmailAlreadyExistsException(request.email)
         }
@@ -74,11 +68,6 @@ class RealEstateAgencyService(
         return toResponse(repository.save(agency))
     }
 
-    /**
-     * `real_estate_agency` é a raiz do `ON DELETE CASCADE` (filiais, usuários,
-     * imóveis, leads), por isso a remoção é só do root — e em cascata, sem
-     * soft-delete.
-     */
     @PreAuthorize("hasRole('FULL_ADMIN')")
     @Transactional
     fun delete(id: UUID) {

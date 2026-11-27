@@ -6,13 +6,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
-/**
- * Processa mensagens MQTT recebidas do broker.
- *
- * Responsabilidade unica: extrair o deviceId do topic, deserializar e validar
- * o payload, e delegar para o [SensorMetricHandler]. Nenhuma excecao escapa
- * daqui — uma mensagem ruim nao pode derrubar o contexto nem a conexao MQTT.
- */
 @Component
 class SensorReadingHandler(
     private val objectMapper: ObjectMapper,

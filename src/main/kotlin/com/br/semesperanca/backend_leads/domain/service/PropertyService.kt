@@ -30,8 +30,6 @@ class PropertyService(
 
         val property =
             Property(
-                // A agência é a da filial. Aceitar as duas no corpo permitiria um imóvel
-                // cujo `real_estate_agency_id` não é o da filial que o escopo percorre.
                 realEstateAgencyId = branchOffice.realEstateAgency?.id,
                 branchOffice = branchOffice,
                 title = request.title,

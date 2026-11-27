@@ -13,24 +13,6 @@ import org.springframework.web.client.RestClient
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
-/**
- * Envia o lead ao serviço de Insight.
- *
- * [createInsight] recebe o `Lead` **já carregado** e não busca por
- * `originLeadId`, e isso não é preferência de assinatura: o método é `@Async`, e a
- * thread do executor não tem `SecurityContext`. Uma busca aqui rodaria sem
- * principal nenhum, e como `findByOriginLeadId` é método derivado — que não passa
- * pela [com.br.semesperanca.backendleads.domain.repository.ScopedRepositoryImpl] —
- * ela sairia sem escopo. Bastava um `POST /leads/receive` com o
- * `originLeadId` de outra agência para que os dados de contato desse lead fossem
- * enviados a um terceiro, e nada no código denunciaria a falha.
- *
- * Por isso a resolução do lead fica em
- * [com.br.semesperanca.backendleads.domain.service.LeadService.receiveLead], na
- * thread do request, onde o principal existe e o repositório escopado responde.
- * Aqui só resta a escrita do `insightId`, que é `save` de uma entidade já
- * carregada e por isso não precisa de principal.
- */
 @Component
 class InsightClient(
     private val leadRepository: LeadRepository,

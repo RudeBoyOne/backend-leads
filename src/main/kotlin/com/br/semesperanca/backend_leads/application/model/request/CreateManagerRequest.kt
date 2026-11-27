@@ -16,12 +16,6 @@ data class CreateManagerRequest(
     @field:NotBlank(message = "Senha é obrigatória")
     @field:Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
     val password: String,
-    /**
-     * Obrigatória, e não opcional: um gerente sem filial não pertence a nenhuma
-     * subárvore do escopo, e `users.real_estate_agency_id` é `NOT NULL` — a agência
-     * é derivada da filial, o que elimina a possibilidade de um gerente lotado na
-     * filial de uma agência e vinculado a outra.
-     */
     @field:NotNull(message = "branchOfficeId é obrigatório")
     val branchOfficeId: UUID,
 )

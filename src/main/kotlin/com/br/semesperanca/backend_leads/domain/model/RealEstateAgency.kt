@@ -11,15 +11,6 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 import java.util.UUID
 
-/**
- * A agência imobiliária — raiz de tenant do sistema. Filiais, usuários, imóveis
- * e leads apontam para ela por `real_estate_agency_id`.
- *
- * Os cinco campos de negócio (name, cnpj, email, phone, active) são exatamente
- * os da V004; `cnpj` e `email` têm `UNIQUE` no banco, e a checagem de
- * duplicidade acontece no service para devolver 400/409 legível em vez de uma
- * violação de constraint genérica.
- */
 @Entity
 @Table(name = "real_estate_agency")
 class RealEstateAgency(

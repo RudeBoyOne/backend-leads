@@ -13,11 +13,6 @@ data class UpdateManagerRequest(
     @field:NotBlank(message = "Email é obrigatório")
     @field:Email(message = "Email inválido")
     val email: String,
-    /**
-     * Transferência de filial é sempre explícita. Sem o campo obrigatório, um
-     * `branchOfficeId` ausente desatribuiria o gerente e o deixaria sem escopo
-     * algum — invisível para o próprio branch owner e para o gerente.
-     */
     @field:NotNull(message = "branchOfficeId é obrigatório")
     val branchOfficeId: UUID,
 )

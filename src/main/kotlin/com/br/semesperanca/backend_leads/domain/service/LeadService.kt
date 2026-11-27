@@ -25,30 +25,11 @@ class LeadService(
     private val insightClient: InsightClient,
     private val realEstateAgentRepository: RealEstateAgentRepository,
 ) {
-    /**
-     * Webhook de lead novo. O e-mail sai direto do DTO; o Insight sai do lead
-     * **carregado pelo repositório escopado**.
-     *
-     * A ordem é o que fecha a brecha: `originLeadId` chega do corpo da requisição,
-     * e resolvê-lo por método derivado — que ignora o escopo — deixaria qualquer
-     * usuário autenticado despachar o lead de outra agência para um terceiro
-     * apenas informando o id. Aqui o lead sai de `findOne(spec)`, que a
-     * [com.br.semesperanca.backendleads.domain.repository.ScopedRepositoryImpl]
-     * soma à subárvore da role: lead fora do escopo é 404, e nenhum dado sai.
-     *
-     * O `InsightClient` é `@Async` e a thread dele não tem `SecurityContext`, o
-     * que é a razão de ele receber a entidade pronta em vez de buscar por conta.
-     */
     fun receiveLead(receivedNotificationDTO: LeadReceivedNotificationDTO) {
         emailService.sendLeadReceived(receivedNotificationDTO, mailProperties.notifyTo ?: "")
         insightClient.createInsight(findByOriginLeadId(receivedNotificationDTO.originLeadId))
     }
 
-    /**
-     * Lead pelo identificador do portal, dentro do escopo. `findOne` — e não
-     * `findByOriginLeadId` — porque é a sobrecarga que recebe `Specification` e
-     * por isso recebe também o filtro de escopo.
-     */
     private fun findByOriginLeadId(originLeadId: String): Lead {
         val spec = Specification<Lead> { root, _, cb -> cb.equal(root.get<Any>("originLeadId"), originLeadId) }
         return leadRepository.findOne(spec).orElseThrow { NotFoundException("Lead não encontrado") }

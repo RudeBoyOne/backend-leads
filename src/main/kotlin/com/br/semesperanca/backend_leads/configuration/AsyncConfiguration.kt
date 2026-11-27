@@ -19,10 +19,6 @@ class AsyncConfiguration {
         return executor
     }
 
-    /**
-     * Executor dedicado para o callback MQTT. O DB nao pode rodar na thread
-     * de I/O do cliente HiveMQ, entao o subscribe usa este executor.
-     */
     @Bean
     fun mqttIngestExecutor(): ThreadPoolTaskExecutor {
         val executor = ThreadPoolTaskExecutor()

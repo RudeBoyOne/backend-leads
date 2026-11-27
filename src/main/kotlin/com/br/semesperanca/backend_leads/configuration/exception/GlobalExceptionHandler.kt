@@ -15,11 +15,6 @@ import java.util.LinkedHashMap
 class GlobalExceptionHandler {
     private val log = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
 
-    /**
-     * Precisa vir antes de [handleRuntimeException]: o handler genérico de
-     * RuntimeException devolveria 400 para um id fora do escopo, o que confirmaria
-     * ao cliente que o recurso existe em algum lugar.
-     */
     @ExceptionHandler(NotFoundException::class)
     fun handleNotFound(ex: NotFoundException): ResponseEntity<Map<String, Any>> = buildResponse(HttpStatus.NOT_FOUND, ex.message)
 

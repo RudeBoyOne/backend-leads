@@ -49,8 +49,6 @@ class OAuth2SuccessHandler(
                         oauthToken.authorizedClientRegistrationId,
                         oauthToken.name,
                     )
-                // Spring Security 7 declara loadAuthorizedClient como @Nullable:
-                // ausencia de authorized client e um estado legitimo, nao um bug.
                 client?.accessToken?.tokenValue
                     ?: throw IllegalStateException("Authorized client ausente para ${oauthToken.name}")
             }

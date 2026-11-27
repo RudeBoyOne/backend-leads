@@ -52,11 +52,6 @@ class SensorMetricService(
         }
     }
 
-    /**
-     * Resolve os imóveis pelo repositório escopado e devolve só os que existem no
-     * escopo do principal. Chamar `findAllById` num repositório comum devolveria
-     * oQuadro completo; aqui o corte é o mesmo dos outros endpoints.
-     */
     private fun visiblePropertyTitles(propertyIds: List<UUID>): Map<UUID, String> =
         if (propertyIds.isEmpty()) {
             emptyMap()
@@ -67,11 +62,6 @@ class SensorMetricService(
                 .toMap()
         }
 
-    /**
-     * Um imóvel fora do escopo não tem binding visível: saímos em 404 pelo
-     * `PropertyRepository` escopado, e não 403, para não confirmar a existência do
-     * imóvel para quem não o pode ver.
-     */
     fun findByProperty(
         propertyId: UUID,
         hours: Int,
@@ -127,7 +117,6 @@ class SensorMetricService(
             return toResponse(existing.get())
         }
 
-        // Device ja ligado a outro imovel: revincula
         if (existing.isPresent) {
             propertySensorRepository.delete(existing.get())
         }
@@ -144,9 +133,6 @@ class SensorMetricService(
     @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
     fun unbind(propertyId: UUID) {
-        // Valida o escopo do imóvel antes de desvincular: `property_sensor` não é
-        // uma entidade escopada, e sem esta checagem o desvinculo funcionaria para
-        // qualquer imóvel de qualquer agência.
         propertyRepository.findById(propertyId).orElseThrow { NotFoundException("Imovel nao encontrado") }
 
         val binding =

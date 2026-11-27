@@ -16,11 +16,6 @@ interface SensorMetricHourlyRepository : JpaRepository<SensorMetricHourly, Senso
         from: Instant,
     ): List<SensorMetricHourly>
 
-    /**
-     * Acumula o bucket horario: soma, min e max. A media e derivada de
-     * sum/sample_count na leitura, entao o bucket e acumulavel sem recalcular
-     * a partir do historico.
-     */
     @Modifying
     @Query(
         value = """

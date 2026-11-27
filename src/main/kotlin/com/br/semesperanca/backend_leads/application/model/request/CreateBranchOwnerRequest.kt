@@ -12,11 +12,6 @@ data class CreateBranchOwnerRequest(
     @field:NotBlank(message = "name é obrigatório")
     @field:Size(max = 150, message = "name deve ter no máximo 150 caracteres")
     val name: String,
-    /**
-     * `users.email` é NOT NULL e UNIQUE. O responsável é um `User` e precisa
-     * autenticar para gerenciar os gerentes da sua filial, então o e-mail deixa de
-     * ser opcional e passa a ser a identidade dele no login.
-     */
     @field:NotBlank(message = "email é obrigatório")
     @field:Email(message = "email deve ser válido")
     @field:Size(max = 150, message = "email deve ter no máximo 150 caracteres")
