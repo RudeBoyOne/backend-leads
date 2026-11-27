@@ -101,7 +101,7 @@ class PropertyService(
         return toResponse(repository.save(property))
     }
 
-    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
+    @PreAuthorize("hasRole('FULL_ADMIN')")
     @Transactional
     fun delete(id: UUID) {
         repository.delete(findPropertyById(id))

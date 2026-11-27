@@ -2,6 +2,7 @@ package com.br.semesperanca.backendleads.application.controller
 
 import com.br.semesperanca.backendleads.application.model.LeadDTO
 import com.br.semesperanca.backendleads.application.model.LeadReceivedNotificationDTO
+import com.br.semesperanca.backendleads.application.model.request.CreateLeadRequest
 import com.br.semesperanca.backendleads.application.model.request.UpdateLeadRequest
 import com.br.semesperanca.backendleads.domain.model.Lead
 import com.br.semesperanca.backendleads.domain.service.LeadService
@@ -12,6 +13,7 @@ import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -31,6 +33,33 @@ class LeadController(
     private val leadService: LeadService,
 ) {
     private val logger = LoggerFactory.getLogger(LeadController::class.java)
+
+    @PostMapping
+    @Operation(summary = "Criar lead")
+    fun create(
+        @Valid @RequestBody request: CreateLeadRequest,
+        servletRequest: HttpServletRequest,
+    ): ResponseEntity<LeadDTO> {
+        val created = leadService.create(request)
+        logger.info("Created | Endpoint: {} | LeadId: {}", servletRequest.requestURI, created.id)
+        return ResponseEntity.status(HttpStatus.CREATED).body(created)
+    }
+
+    @GetMapping
+    @Operation(
+        summary = "Listar leads",
+        description = "Filtros opcionais: status, corretorId, origin e search",
+    )
+    fun findAll(
+        @RequestParam(required = false) status: String?,
+        @RequestParam(required = false) corretorId: Long?,
+        @RequestParam(required = false) origin: String?,
+        @RequestParam(required = false) search: String?,
+        pageable: Pageable,
+    ): ResponseEntity<Page<LeadDTO>> {
+        val leads = leadService.findLeads(status, corretorId, origin, search, pageable)
+        return ResponseEntity.ok(leads.map { LeadDTO.fromLead(it) })
+    }
 
     @PostMapping("/receive")
     @Operation(
@@ -65,13 +94,14 @@ class LeadController(
 
         logger.info("Fetched Leads | Count: {}", leads.totalElements)
 
-        val dtos = leads.map {
-            LeadDTO.fromLead(it)
-        }
+        val dtos =
+            leads.map {
+                LeadDTO.fromLead(it)
+            }
         return ResponseEntity.ok(dtos)
     }
 
-    @GetMapping("/search/{id}")
+    @GetMapping("/{id}")
     @Operation(summary = "Buscar lead por ID")
     fun getLeadById(
         @PathVariable("id") id: UUID,

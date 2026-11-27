@@ -79,7 +79,7 @@ class OAuth2LoginSecurityConfig(
                     .requestMatchers(HttpMethod.PATCH, "/branch-offices/**", "/real-estate-agents/**", "/managers/**")
                     .hasAnyRole("FULL_ADMIN", "ADMIN")
                     .requestMatchers(HttpMethod.PUT, "/managers/**")
-                    .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
+                    .hasAnyRole("FULL_ADMIN", "ADMIN")
                     .requestMatchers(HttpMethod.POST, "/teams/**", "/sensor-property-metrics")
                     .hasAnyRole("FULL_ADMIN", "ADMIN", "MANAGER")
                     .requestMatchers(HttpMethod.PUT, "/teams/**", "/properties/**")

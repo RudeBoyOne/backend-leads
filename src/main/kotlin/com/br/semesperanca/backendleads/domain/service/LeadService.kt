@@ -119,7 +119,7 @@ class LeadService(
         )
     }
 
-    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
+    @PreAuthorize("hasRole('FULL_ADMIN')")
     @Transactional
     fun delete(id: UUID) {
         val lead =

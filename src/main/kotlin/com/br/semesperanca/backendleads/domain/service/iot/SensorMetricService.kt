@@ -147,6 +147,8 @@ class SensorMetricService(
         propertySensorRepository.delete(binding)
     }
 
+    fun findAllPropertySensors(): List<PropertySensorResponse> = propertySensorRepository.findAll().map(::toResponse)
+
     fun findPropertySensorById(id: UUID): PropertySensorResponse = toResponse(findPropertySensor(id))
 
     @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
