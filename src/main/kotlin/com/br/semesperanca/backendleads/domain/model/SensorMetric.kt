@@ -15,6 +15,10 @@ class SensorMetric(
     var humidity: Double? = null,
     @Column(name = "luminosity", nullable = false)
     var luminosity: Double? = null,
+    @Column(name = "battery_level")
+    var batteryLevel: Int? = null,
+    @Column(name = "is_valid", nullable = false)
+    var isValid: Boolean = true,
     @Column(name = "recorded_at", nullable = false)
     var recordedAt: Instant? = null,
 )

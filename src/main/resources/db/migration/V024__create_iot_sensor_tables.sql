@@ -2,10 +2,14 @@
 -- (um dispositivo pertence a no maximo um imóvel) e property_id também
 -- (um imóvel expoe no maximo um sensor na rota de detalhe).
 CREATE TABLE property_sensor (
-    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    property_id UUID        NOT NULL REFERENCES property(id) ON DELETE CASCADE,
-    device_id   VARCHAR(64) NOT NULL,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    id                        UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    property_id               UUID        NOT NULL REFERENCES property(id) ON DELETE CASCADE,
+    device_id                 VARCHAR(64) NOT NULL,
+    label                     VARCHAR(100),
+    active                    BOOLEAN     NOT NULL DEFAULT TRUE,
+    sampling_interval_seconds INTEGER,
+    installed_at              TIMESTAMP,
+    created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_property_sensor_device   UNIQUE (device_id),
     CONSTRAINT uq_property_sensor_property UNIQUE (property_id)
 );
@@ -16,11 +20,13 @@ CREATE INDEX idx_property_sensor_property_id ON property_sensor(property_id);
 -- DOUBLE PRECISION (e nao NUMERIC) porque a entidade mapeia Double, e o Hibernate
 -- valida a coluna como float(53) — NUMERIC reprovaria no ddl-auto: validate.
 CREATE TABLE sensor_metric (
-    device_id   VARCHAR(64)  NOT NULL PRIMARY KEY,
-    temperature DOUBLE PRECISION NOT NULL,
-    humidity    DOUBLE PRECISION NOT NULL,
-    luminosity  DOUBLE PRECISION NOT NULL,
-    recorded_at TIMESTAMPTZ   NOT NULL
+    device_id     VARCHAR(64)      NOT NULL PRIMARY KEY,
+    temperature   DOUBLE PRECISION NOT NULL,
+    humidity      DOUBLE PRECISION NOT NULL,
+    luminosity    DOUBLE PRECISION NOT NULL,
+    battery_level INTEGER,
+    is_valid      BOOLEAN          NOT NULL DEFAULT TRUE,
+    recorded_at   TIMESTAMPTZ      NOT NULL
 );
 
 -- Agregação incremental por hora UTC. A média é derivada de sum/sample_count,
