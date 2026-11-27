@@ -7,6 +7,7 @@ import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import java.time.LocalDateTime
 import java.util.LinkedHashMap
@@ -69,6 +70,10 @@ class GlobalExceptionHandler {
     @ExceptionHandler(EmailAlreadyExistsException::class)
     fun handleEmailAlreadyExists(ex: EmailAlreadyExistsException): ResponseEntity<Map<String, Any>> =
         buildResponse(HttpStatus.CONFLICT, ex.message)
+
+    @ExceptionHandler(ResponseStatusException::class)
+    fun handleResponseStatus(ex: ResponseStatusException): ResponseEntity<Map<String, Any>> =
+        buildResponse(HttpStatus.valueOf(ex.statusCode.value()), ex.reason)
 
     private fun buildResponse(
         status: HttpStatus,

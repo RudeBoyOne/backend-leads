@@ -5,6 +5,7 @@ import com.br.semesperanca.backendleads.configuration.MailProperties
 import com.br.semesperanca.backendleads.configuration.exception.NotFoundException
 import com.br.semesperanca.backendleads.domain.model.Lead
 import com.br.semesperanca.backendleads.domain.repository.LeadRepository
+import com.br.semesperanca.backendleads.domain.repository.RealEstateAgencyRepository
 import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
@@ -26,7 +27,8 @@ class LeadServiceTest {
     private val leadRepository = mock<LeadRepository>()
     private val emailService = mock<EmailService>()
     private val insightClient = mock<InsightClient>()
-    private val realEstateAgentRepository = mock<RealEstateAgentRepository>() 
+    private val realEstateAgentRepository = mock<RealEstateAgentRepository>()
+    private val realEstateAgencyRepository = mock<RealEstateAgencyRepository>()
 
     private val mailProperties =
         MailProperties().apply {
@@ -35,7 +37,14 @@ class LeadServiceTest {
         }
 
     private val service =
-        LeadService(leadRepository, emailService, mailProperties, insightClient, realEstateAgentRepository)
+        LeadService(
+            leadRepository,
+            emailService,
+            mailProperties,
+            insightClient,
+            realEstateAgentRepository,
+            realEstateAgencyRepository,
+        )
 
     private val dto =
         LeadReceivedNotificationDTO(leadId = "db-1", originLeadId = "ORIGIN-1", leadOrigin = "ZAP")

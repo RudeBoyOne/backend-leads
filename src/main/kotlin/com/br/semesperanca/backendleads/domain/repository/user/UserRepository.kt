@@ -12,5 +12,7 @@ interface UserRepository : JpaRepository<User, UUID> {
 
     fun existsByEmail(email: String): Boolean
 
+    fun existsByRoleId(roleId: UUID): Boolean
+
     fun findByBranchOfficeId(branchOfficeId: UUID): List<User>
 }

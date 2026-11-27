@@ -2,11 +2,13 @@ package com.br.semesperanca.backendleads.domain.service
 
 import com.br.semesperanca.backendleads.application.model.LeadDTO
 import com.br.semesperanca.backendleads.application.model.LeadReceivedNotificationDTO
+import com.br.semesperanca.backendleads.application.model.request.CreateLeadRequest
 import com.br.semesperanca.backendleads.application.model.request.UpdateLeadRequest
 import com.br.semesperanca.backendleads.configuration.MailProperties
 import com.br.semesperanca.backendleads.configuration.exception.NotFoundException
 import com.br.semesperanca.backendleads.domain.model.Lead
 import com.br.semesperanca.backendleads.domain.repository.LeadRepository
+import com.br.semesperanca.backendleads.domain.repository.RealEstateAgencyRepository
 import com.br.semesperanca.backendleads.domain.repository.user.RealEstateAgentRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -24,7 +26,45 @@ class LeadService(
     private val mailProperties: MailProperties,
     private val insightClient: InsightClient,
     private val realEstateAgentRepository: RealEstateAgentRepository,
+    private val realEstateAgencyRepository: RealEstateAgencyRepository,
 ) {
+    @PreAuthorize("hasRole('FULL_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
+    @Transactional
+    fun create(request: CreateLeadRequest): LeadDTO {
+        val agency =
+            realEstateAgencyRepository
+                .findById(request.realEstateAgencyId)
+                .orElseThrow { NotFoundException("Imobiliária não encontrada") }
+        val agent =
+            request.realEstateAgentId?.let { agentId ->
+                realEstateAgentRepository.findById(agentId).orElseThrow { NotFoundException("Corretor não encontrado") }
+            }
+
+        val lead =
+            Lead(
+                realEstateAgencyId = agency.id,
+                realEstateAgent = agent,
+                portalId = request.portalId,
+                funnelStageId = request.funnelStageId,
+                originLeadId = request.originLeadId,
+                originListingId = request.originListingId,
+                leadOrigin = request.leadOrigin,
+                clientListingId = request.clientListingId,
+                name = request.name,
+                email = request.email,
+                phoneNumber = request.phoneNumber,
+                message = request.message,
+                temperature = request.temperature,
+                transactionType = request.transactionType,
+                source = request.source,
+                status = request.status ?: "new",
+                active = true,
+                timestamp = Instant.now(),
+            )
+
+        return LeadDTO.fromLead(leadRepository.save(lead))
+    }
+
     fun receiveLead(receivedNotificationDTO: LeadReceivedNotificationDTO) {
         emailService.sendLeadReceived(receivedNotificationDTO, mailProperties.notifyTo ?: "")
         insightClient.createInsight(findByOriginLeadId(receivedNotificationDTO.originLeadId))
@@ -98,11 +138,11 @@ class LeadService(
         val lead = leadRepository.findById(id).orElseThrow { NotFoundException("Lead não encontrado") }
 
         request.name?.let { lead.name = it }
-        
+
         request.email?.let { lead.email = it }
-        
+
         request.phoneNumber?.let { lead.phoneNumber = it.toLongOrNull() ?: lead.phoneNumber }
-        
+
         request.message?.let { lead.message = it }
         request.temperature?.let { lead.temperature = it }
         request.transactionType?.let { lead.transactionType = it }

@@ -1,4 +1,4 @@
-package com.br.semesperanca.backendleads.domain.service
+package com.br.semesperanca.backendleads.domain.service.user
 
 import com.br.semesperanca.backendleads.application.model.request.CreateBranchOwnerRequest
 import com.br.semesperanca.backendleads.application.model.request.UpdateBranchOwnerRequest

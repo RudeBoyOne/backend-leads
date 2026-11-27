@@ -3,7 +3,7 @@ package com.br.semesperanca.backendleads.application.controller
 import com.br.semesperanca.backendleads.application.model.request.CreateBranchOwnerRequest
 import com.br.semesperanca.backendleads.application.model.request.UpdateBranchOwnerRequest
 import com.br.semesperanca.backendleads.application.model.response.BranchOwnerResponse
-import com.br.semesperanca.backendleads.domain.service.BranchOwnerService
+import com.br.semesperanca.backendleads.domain.service.user.BranchOwnerService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
